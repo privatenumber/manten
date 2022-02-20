@@ -31,8 +31,8 @@ export function createDescribe(
 		try {
 			const inProgress = (async () => {
 				const context: Context = {
-					test: createTest(`${description} >`, childTests),
-					describe: createDescribe(`${description} >`, childTests),
+					test: createTest(`${description} ›`, childTests),
+					describe: createDescribe(`${description} ›`, childTests),
 					runTestSuite: (
 						testSuite,
 						...args

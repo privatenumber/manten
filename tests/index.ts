@@ -21,7 +21,7 @@ describe('asynchronous', ({ test }) => {
 		const testProcess = await execaNode('./tests/specs/asynchronous-sequential.js');
 
 		expect(testProcess.exitCode).toBe(0);
-		expect(testProcess.stdout).toBe('✔ A\n✔ Group > B\n✔ Group > B\n✔ Group - async > C\n✔ Group - async > D\n✔ Group - async > Test suite - Group > A\n✔ Group - async > Test suite - Group > B\n✔ Group - async > Test suite - Group Async > C\n✔ Group - async > Test suite - Group Async > D\n✔ Group - async > Test suite - E\n✔ E');
+		expect(testProcess.stdout).toBe('✔ A\n✔ Group › B\n✔ Group › B\n✔ Group - async › C\n✔ Group - async › D\n✔ Group - async › Test suite - Group › A\n✔ Group - async › Test suite - Group › B\n✔ Group - async › Test suite - Group Async › C\n✔ Group - async › Test suite - Group Async › D\n✔ Group - async › Test suite - E\n✔ E');
 	});
 
 	test('concurrent', async () => {
