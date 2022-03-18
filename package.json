@@ -2,8 +2,19 @@
 	"name": "manten",
 	"version": "0.0.0-semantic-release",
 	"description": "満点 - Lightweight testing library for Node.js",
+	"keywords": [
+		"node",
+		"testing",
+		"test",
+		"async",
+		"library"
+	],
 	"license": "MIT",
-	"author": "Hiroki Osame <hiroki.osame@gmail.com>",
+	"repository": "privatenumber/manten",
+	"author": {
+		"name": "Hiroki Osame",
+		"email": "hiroki.osame@gmail.com"
+	},
 	"type": "module",
 	"files": [
 		"dist"
