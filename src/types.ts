@@ -39,7 +39,7 @@ type RunTestSuite = <
 
 export type Test = (
 	title: string,
-	testFunction: () => Promise<void>,
+	testFunction: () => void,
 ) => Promise<void>;
 
 export type Describe = (
