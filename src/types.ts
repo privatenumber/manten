@@ -40,6 +40,7 @@ type RunTestSuite = <
 export type Test = (
 	title: string,
 	testFunction: () => void,
+	timeout?: number,
 ) => Promise<void>;
 
 export type Describe = (

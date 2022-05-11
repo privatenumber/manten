@@ -30,4 +30,13 @@ describe('asynchronous', ({ test }) => {
 		expect(testProcess.exitCode).toBe(0);
 		expect(testProcess.stdout).toBe('✔ B\n✔ C\n✔ A');
 	});
+
+	test('timeout', async () => {
+		const testProcess = await execaNode('./tests/specs/asynchronous-timeout.js', {
+			reject: false,
+		});
+
+		expect(testProcess.exitCode).toBe(1);
+		expect(testProcess.stderr).toMatch('✖ should fail\nTimeout: 1ms');
+	});
 });

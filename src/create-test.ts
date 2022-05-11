@@ -4,6 +4,12 @@ import type { Test, PendingTests } from './types';
 const successIcon = green('✔');
 const failureIcon = red('✖');
 
+const throwOnTimeout = (duration: number) => new Promise((resolve, reject) => {
+	setTimeout(() => {
+		reject(new Error(`Timeout: ${duration}ms`));
+	}, duration);
+});
+
 export function createTest(
 	prefix?: string,
 	pendingTests?: PendingTests,
@@ -11,6 +17,7 @@ export function createTest(
 	return async function test(
 		title,
 		testFunction,
+		timeout,
 	) {
 		if (prefix) {
 			title = `${prefix} ${title}`;
@@ -18,14 +25,24 @@ export function createTest(
 
 		const testRunning = (async () => {
 			try {
-				await testFunction();
+				if (timeout) {
+					await Promise.race([
+						testFunction(),
+						throwOnTimeout(timeout),
+					]);
+				} else {
+					await testFunction();
+				}
+
 				console.log(successIcon, title);
 			} catch (error: any) {
 				console.error(failureIcon, title);
 
 				// Remove "jest assertion error" matcherResult object
 				if (
-					'matcherResult' in error
+					error
+					&& typeof error === 'object'
+					&& 'matcherResult' in error
 					&& error.constructor.name === 'JestAssertionError'
 				) {
 					delete error.matcherResult;

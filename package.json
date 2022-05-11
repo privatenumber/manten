@@ -23,6 +23,7 @@
 	"types": "./dist/index.d.ts",
 	"scripts": {
 		"build": "pkgroll --minify",
+		"pretest": "npm run build",
 		"test": "tsx tests/index.ts",
 		"lint": "eslint ."
 	},
