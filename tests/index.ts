@@ -37,6 +37,6 @@ describe('asynchronous', ({ test }) => {
 		});
 
 		expect(testProcess.exitCode).toBe(1);
-		expect(testProcess.stderr).toMatch('✖ should fail\nTimeout: 1ms');
+		expect(testProcess.stderr).toMatch('✖ should fail\nError: Timeout: 1ms');
 	});
 });
