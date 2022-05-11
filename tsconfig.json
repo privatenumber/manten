@@ -8,7 +8,7 @@
 		"declaration": true,
 
 		"module": "esnext",
-		"target": "es2019"
+		"target": "esnext"
 	},
 	"include": [
 		"src"
