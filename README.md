@@ -51,7 +51,7 @@ node tests/test.mjs
 ## Usage
 
 ### Writing tests
-Create and run a test with the `test(name, testFunction)` function. The first parameter is the test name, and the second is the test function.
+Create and run a test with the `test(name, testFunction)` function. The first argument is the test name, and the second is the test function. Optionally, you can pass in a timeout in milliseconds as the third argument for asynchronous tests.
 
 The test runs immediately after the test function is invoked and the results are logged to stdout.
 
@@ -147,6 +147,15 @@ test('Test A', async () => {
 test('Test B', async () => {
     await somethingAsync()
 })
+```
+
+#### Timeouts
+Pass in the max time duration a test can run for as the third argument to `test()`.
+
+```ts
+test('should finish within 1s', async () => {
+    await slowTest()
+}, 1000)
 ```
 
 ### Grouping async tests
@@ -259,11 +268,13 @@ const runTest = testSuite((
 
 ## API
 
-### test(name, testFunction)
+### test(name, testFunction, timeout?)
 
 name: `string`
 
 testFunction: `() => void`
+
+timeout: `number`
 
 Return value: `Promise<void>`
 
