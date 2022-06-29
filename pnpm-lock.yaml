@@ -3,7 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@pvtnbr/eslint-config': ^0.23.1
   '@types/node': ^17.0.18
-  cleye: ^1.1.0
+  cleye: ^1.2.1
   eslint: ^8.18.0
   execa: ^6.1.0
   expect: ^27.5.1
@@ -18,7 +18,7 @@ dependencies:
 devDependencies:
   '@pvtnbr/eslint-config': 0.23.1_b5e7v2qnwxfo6hmiq56u52mz3e
   '@types/node': 17.0.18
-  cleye: 1.1.0
+  cleye: 1.2.1
   eslint: 8.18.0
   execa: 6.1.0
   kleur: 4.1.5
@@ -637,8 +637,8 @@ packages:
       escape-string-regexp: 1.0.5
     dev: true
 
-  /cleye/1.1.0:
-    resolution: {integrity: sha512-pEKYkgy1wigX3v1tdQN0KAl1XSrjcyfJJuhQorH8F3J7euQPx5nkkdZj8dxRb7+AFI24XagsiA61RBHkQCE48g==}
+  /cleye/1.2.1:
+    resolution: {integrity: sha512-DjoWA/dFn1rQypY4juFH4IvjVxXxld4o92bmkGPR+uZNqBMpvDXx1VUmL93p2R5CBwSWt83eEe/SLPqtQahZNg==}
     dependencies:
       terminal-columns: 1.4.1
       type-flag: 2.1.0
