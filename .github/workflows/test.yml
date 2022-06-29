@@ -31,8 +31,8 @@ jobs:
     - name: Install dependencies
       run: npx ci
 
-    - name: Lint
-      run: npm run lint
-
     - name: Test
       run: npm run test
+
+    - name: Lint
+      run: npm run lint
