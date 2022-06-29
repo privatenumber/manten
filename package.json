@@ -36,7 +36,7 @@
 		"expect": "^27.5.1"
 	},
 	"devDependencies": {
-		"@pvtnbr/eslint-config": "^0.23.1",
+		"@pvtnbr/eslint-config": "^0.26.1",
 		"@types/node": "^17.0.18",
 		"cleye": "^1.2.1",
 		"eslint": "^8.18.0",
