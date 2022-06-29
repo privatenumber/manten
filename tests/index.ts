@@ -1,8 +1,9 @@
+// @ts-expect-error execa is ESM
 import { execaNode } from 'execa';
-import { test, expect, describe } from '../dist/index.js';
+import { test, expect, describe } from '#manten';
 
 test('Failures should exit with 1', async () => {
-	const testProcess = await execaNode('./tests/specs/test-fail.js').catch(error => error);
+	const testProcess = await execaNode('./tests/specs/test-fail').catch(error => error);
 
 	expect(testProcess.exitCode).toBe(1);
 	expect(testProcess.stdout).toBe('');
@@ -10,7 +11,7 @@ test('Failures should exit with 1', async () => {
 });
 
 test('synchronous', async () => {
-	const testProcess = await execaNode('./tests/specs/synchronous.js');
+	const testProcess = await execaNode('./tests/specs/synchronous');
 
 	expect(testProcess.exitCode).toBe(0);
 	expect(testProcess.stdout).toBe('a\nb\nc\n✔ Async\n✔ B\n✔ C');
@@ -18,21 +19,21 @@ test('synchronous', async () => {
 
 describe('asynchronous', ({ test }) => {
 	test('sequential', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-sequential.js');
+		const testProcess = await execaNode('./tests/specs/asynchronous-sequential');
 
 		expect(testProcess.exitCode).toBe(0);
 		expect(testProcess.stdout).toBe('✔ A\n✔ Group › B\n✔ Group › B\n✔ Group - async › C\n✔ Group - async › D\n✔ Group - async › Test suite - Group › A\n✔ Group - async › Test suite - Group › B\n✔ Group - async › Test suite - Group Async › C\n✔ Group - async › Test suite - Group Async › D\n✔ Group - async › Test suite - E\n✔ E');
 	});
 
 	test('concurrent', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent.js');
+		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent');
 
 		expect(testProcess.exitCode).toBe(0);
 		expect(testProcess.stdout).toBe('✔ B\n✔ C\n✔ A');
 	});
 
 	test('timeout', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-timeout.js', {
+		const testProcess = await execaNode('./tests/specs/asynchronous-timeout', {
 			reject: false,
 		});
 

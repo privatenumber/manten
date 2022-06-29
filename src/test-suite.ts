@@ -21,6 +21,11 @@ const defaultContext: Context = {
 			testSuiteModule = testSuiteModule.default;
 		}
 
+		// Handle twice if ESM is compiled to CJS
+		if ('default' in testSuiteModule) {
+			testSuiteModule = testSuiteModule.default;
+		}
+
 		return testSuiteModule.apply(defaultContext, args);
 	},
 };

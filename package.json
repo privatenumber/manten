@@ -26,11 +26,19 @@
 		"require": "./dist/index.js",
 		"import": "./dist/index.mjs"
 	},
+	"imports": {
+		"#manten": {
+			"types": "./src/index.ts",
+			"development": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		}
+	},
 	"scripts": {
 		"build": "pkgroll --minify",
 		"pretest": "npm run build",
-		"test": "tsx tests/index.ts",
-		"lint": "eslint ."
+		"test": "tsx tests",
+		"lint": "eslint .",
+		"dev": "tsx watch --conditions=development tests"
 	},
 	"dependencies": {
 		"expect": "^27.5.1"

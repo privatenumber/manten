@@ -1,4 +1,4 @@
-import { test } from '../../dist/index.js';
+import { test } from '#manten';
 
 test('Async', async () => {
 	console.log('a');

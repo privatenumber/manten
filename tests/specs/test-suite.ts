@@ -1,5 +1,5 @@
 import { setTimeout } from 'timers/promises';
-import { testSuite } from '../../dist/index.js';
+import { testSuite } from '#manten';
 
 export default testSuite(({ describe, test }) => {
 	describe('Test suite - Group', ({ test }) => {

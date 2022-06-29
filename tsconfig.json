@@ -3,14 +3,6 @@
 		"strict": true,
 		"isolatedModules": true,
 		"esModuleInterop": true,
-		"moduleResolution": "node",
-		"outDir": "dist",
-		"declaration": true,
-
-		"module": "esnext",
-		"target": "esnext"
-	},
-	"include": [
-		"src"
-	]
+		"module": "Node16"
+	}
 }

@@ -24,9 +24,9 @@ export type TestSuite<
 	...callbackArgs: InferCallback<Callback>['args']
 ) => InferCallback<Callback>['returnType'];
 
-type ModuleDefaultExport <defaultExport> = {
-	default: defaultExport;
-};
+type ModuleDefaultExport <defaultExport> =
+	{ default: defaultExport }
+	| { default: { default: defaultExport } }; // ESM compiled to CJS
 
 type RunTestSuite = <
 	Callback extends TestSuiteCallback<any[], any>

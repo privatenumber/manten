@@ -1,5 +1,5 @@
 import { setTimeout } from 'timers/promises';
-import { test } from '../../dist/index.js';
+import { test } from '#manten';
 
 (async () => {
 	await test('should fail', async () => {
