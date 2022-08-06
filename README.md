@@ -372,3 +372,8 @@ test('My test', async () => {
 ```
 </details>
 
+## Related
+
+### [fs-fixture](https://github.com/privatenumber/fs-fixture)
+
+Easily create test fixtures at a temporary file-system path.
