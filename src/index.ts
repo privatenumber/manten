@@ -6,4 +6,4 @@ export type {
 } from './types';
 export * from './top-level-context';
 export { testSuite } from './test-suite';
-export { default as expect } from 'expect';
+export { expect } from 'expect';
