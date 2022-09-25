@@ -20,19 +20,14 @@ jobs:
       with:
         node-version-file: '.nvmrc'
 
-    - name: Cache pnpm modules
-      uses: actions/cache@v2
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2.2.2
       with:
-        path: ~/.pnpm-store
-        key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-
-
-    - name: Install dependencies
-      run: npx ci
+        version: 7
+        run_install: true
 
     - name: Test
-      run: npm run test
+      run: pnpm test
 
     - name: Lint
-      run: npm run lint
+      run: pnpm lint
