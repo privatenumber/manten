@@ -30,13 +30,14 @@ export function createTest(
 			try {
 				if (timeout) {
 					const controller = new AbortController();
-
-					await Promise.race([
-						testFunction(),
-						throwOnTimeout(timeout, controller),
-					]);
-
-					controller.abort();
+					try {
+						await Promise.race([
+							testFunction(),
+							throwOnTimeout(timeout, controller),
+						]);
+					} finally {
+						controller.abort();
+					}
 				} else {
 					await testFunction();
 				}
