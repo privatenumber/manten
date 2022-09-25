@@ -1,14 +1,17 @@
+import { setTimeout } from 'node:timers/promises';
 import { green, red } from 'kleur/colors'; // eslint-disable-line node/file-extension-in-import
 import type { Test, PendingTests } from './types';
 
 const successIcon = green('✔');
 const failureIcon = red('✖');
 
-const throwOnTimeout = (duration: number) => new Promise((resolve, reject) => {
-	setTimeout(() => {
-		reject(new Error(`Timeout: ${duration}ms`));
-	}, duration);
-});
+const throwOnTimeout = async (
+	duration: number,
+	controller: AbortController,
+) => {
+	await setTimeout(duration, undefined, controller);
+	throw new Error(`Timeout: ${duration}ms`);
+};
 
 export function createTest(
 	prefix?: string,
@@ -26,10 +29,14 @@ export function createTest(
 		const testRunning = (async () => {
 			try {
 				if (timeout) {
+					const controller = new AbortController();
+
 					await Promise.race([
 						testFunction(),
-						throwOnTimeout(timeout),
+						throwOnTimeout(timeout, controller),
 					]);
+
+					controller.abort();
 				} else {
 					await testFunction();
 				}
