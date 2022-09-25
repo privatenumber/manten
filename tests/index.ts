@@ -39,7 +39,7 @@ describe('asynchronous', ({ test }) => {
 		});
 
 		const elapsed = Date.now() - startTime;
-		expect(elapsed).toBeLessThan(500);
+		expect(elapsed).toBeLessThan(2000);
 		expect(testProcess.exitCode).toBe(1);
 		expect(testProcess.stderr).toMatch('✖ should fail');
 		expect(testProcess.stderr).toMatch('Error: Timeout: 1ms');
