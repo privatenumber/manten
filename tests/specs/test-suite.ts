@@ -1,5 +1,9 @@
-import { setTimeout } from 'timers/promises';
+// import { setTimeout } from 'timers/promises';
 import { testSuite } from '#manten';
+
+const setTimeout = (duration: number) => new Promise((resolve) => {
+	global.setTimeout(resolve, duration);
+});
 
 export default testSuite(({ describe, test }) => {
 	describe('Test suite - Group', ({ test }) => {

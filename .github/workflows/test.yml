@@ -27,7 +27,9 @@ jobs:
         run_install: true
 
     - name: Test
-      run: pnpm test
+      run: |
+        pnpm --use-node-version=12.22.12 test
+        pnpm --use-node-version=16.18.0 test
 
     - name: Lint
       run: pnpm lint
