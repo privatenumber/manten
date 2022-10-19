@@ -1,4 +1,4 @@
-import { setTimeout } from 'timers/promises';
+import { setTimeout } from '../utils/set-timeout';
 import { testSuite } from '#manten';
 
 export default testSuite(({ describe, test }) => {

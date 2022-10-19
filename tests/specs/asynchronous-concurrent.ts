@@ -1,4 +1,4 @@
-import { setTimeout } from 'timers/promises';
+import { setTimeout } from '../utils/set-timeout';
 import { test } from '#manten';
 
 test('A', async () => {
