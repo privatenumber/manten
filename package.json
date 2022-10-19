@@ -35,7 +35,7 @@
 	},
 	"scripts": {
 		"build": "pkgroll --minify",
-		"test": "pnpm build && tsx tests",
+		"test": "tsx tests",
 		"lint": "eslint --cache .",
 		"dev": "tsx watch --conditions=development tests"
 	},
