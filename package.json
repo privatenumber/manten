@@ -1,0 +1,70 @@
+{
+	"name": "manten",
+	"version": "0.0.0-semantic-release",
+	"description": "満点 - Lightweight testing library for Node.js",
+	"keywords": [
+		"node",
+		"testing",
+		"test",
+		"async",
+		"library"
+	],
+	"license": "MIT",
+	"repository": "privatenumber/manten",
+	"author": {
+		"name": "Hiroki Osame",
+		"email": "hiroki.osame@gmail.com"
+	},
+	"files": [
+		"dist"
+	],
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		"types": "./dist/index.d.ts",
+		"require": "./dist/index.js",
+		"import": "./dist/index.mjs"
+	},
+	"imports": {
+		"#manten": {
+			"types": "./src/index.ts",
+			"development": "./src/index.ts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"scripts": {
+		"build": "pkgroll --minify",
+		"test": "tsx tests",
+		"lint": "eslint --cache .",
+		"dev": "tsx watch --conditions=development tests"
+	},
+	"dependencies": {
+		"@jest/expect": "^29.2.1"
+	},
+	"devDependencies": {
+		"@pvtnbr/eslint-config": "^0.30.2",
+		"@types/node": "^18.11.2",
+		"cleye": "^1.2.1",
+		"eslint": "^8.25.0",
+		"execa": "^6.1.0",
+		"kleur": "^4.1.5",
+		"pkgroll": "^1.4.0",
+		"tsx": "^3.10.3",
+		"typescript": "^4.8.4"
+	},
+	"eslintConfig": {
+		"extends": "@pvtnbr",
+		"rules": {
+			"@typescript-eslint/no-shadow": [
+				"error",
+				{
+					"allow": [
+						"describe",
+						"test"
+					]
+				}
+			]
+		}
+	}
+}
