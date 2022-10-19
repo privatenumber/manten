@@ -40,18 +40,18 @@
 		"dev": "tsx watch --conditions=development tests"
 	},
 	"dependencies": {
-		"expect": "^29.0.3"
+		"expect": "^29.2.1"
 	},
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.30.2",
-		"@types/node": "^18.7.21",
+		"@types/node": "^18.11.2",
 		"cleye": "^1.2.1",
 		"eslint": "^8.25.0",
 		"execa": "^6.1.0",
 		"kleur": "^4.1.5",
 		"pkgroll": "^1.4.0",
-		"tsx": "^3.9.0",
-		"typescript": "^4.8.3"
+		"tsx": "^3.10.3",
+		"typescript": "^4.8.4"
 	},
 	"eslintConfig": {
 		"extends": "@pvtnbr",
