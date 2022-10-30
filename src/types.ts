@@ -37,9 +37,13 @@ type RunTestSuite = <
 	...args: InferCallback<Callback>['args']
 ) => InferCallback<Callback>['returnType'];
 
+export type TestApi = {
+	onFail: (error: Error) => void;
+};
+
 export type Test = (
 	title: string,
-	testFunction: () => void,
+	testFunction: (api: TestApi) => void,
 	timeout?: number,
 ) => Promise<void>;
 
