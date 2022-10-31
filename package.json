@@ -37,7 +37,8 @@
 		"build": "pkgroll --minify",
 		"test": "tsx tests",
 		"lint": "eslint --cache .",
-		"dev": "tsx watch --conditions=development tests"
+		"dev": "tsx watch --conditions=development tests",
+		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"dependencies": {
 		"expect": "^29.2.1"
@@ -45,6 +46,7 @@
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.30.2",
 		"@types/node": "^18.11.2",
+		"clean-pkg-json": "^1.2.0",
 		"cleye": "^1.2.1",
 		"eslint": "^8.25.0",
 		"execa": "^6.1.0",
