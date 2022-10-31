@@ -2,7 +2,7 @@ import { green, red } from 'kleur/colors'; // eslint-disable-line node/file-exte
 import type {
 	Test,
 	TestApi,
-	onFailCallback,
+	onTestFailCallback,
 	PendingTests,
 } from './types';
 
@@ -32,10 +32,10 @@ export function createTest(
 		}
 
 		const testRunning = (async () => {
-			let onFail: undefined | onFailCallback;
+			let onTestFail: undefined | onTestFailCallback;
 			const api: TestApi = {
-				onFail(callback) {
-					onFail = callback;
+				onTestFail(callback) {
+					onTestFail = callback;
 				},
 			};
 
@@ -71,8 +71,8 @@ export function createTest(
 				console.error(error);
 				process.exitCode = 1;
 
-				if (typeof onFail === 'function') {
-					onFail(error);
+				if (typeof onTestFail === 'function') {
+					onTestFail(error);
 				}
 			}
 		})();
