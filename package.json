@@ -41,7 +41,7 @@
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"dependencies": {
-		"expect": "^29.2.1"
+		"expect": "^29.2.2"
 	},
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.32.0",
