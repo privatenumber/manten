@@ -1,5 +1,10 @@
 import { green, red } from 'kleur/colors'; // eslint-disable-line node/file-extension-in-import
-import type { Test, PendingTests } from './types';
+import type {
+	Test,
+	TestApi,
+	onTestFailCallback,
+	PendingTests,
+} from './types';
 
 const successIcon = green('✔');
 const failureIcon = red('✖');
@@ -27,19 +32,26 @@ export function createTest(
 		}
 
 		const testRunning = (async () => {
+			let onTestFail: undefined | onTestFailCallback;
+			const api: TestApi = {
+				onTestFail(callback) {
+					onTestFail = callback;
+				},
+			};
+
 			try {
 				if (timeout) {
 					const controller = { timeoutId: undefined };
 					try {
 						await Promise.race([
-							testFunction(),
+							testFunction(api),
 							throwOnTimeout(timeout, controller),
 						]);
 					} finally {
 						clearTimeout(controller.timeoutId);
 					}
 				} else {
-					await testFunction();
+					await testFunction(api);
 				}
 
 				console.log(successIcon, title);
@@ -58,6 +70,10 @@ export function createTest(
 
 				console.error(error);
 				process.exitCode = 1;
+
+				if (typeof onTestFail === 'function') {
+					onTestFail(error);
+				}
 			}
 		})();
 
