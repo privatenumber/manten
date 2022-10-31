@@ -1,0 +1,39 @@
+{
+  "name": "manten",
+  "version": "0.0.0-semantic-release",
+  "description": "満点 - Lightweight testing library for Node.js",
+  "keywords": [
+    "node",
+    "testing",
+    "test",
+    "async",
+    "library"
+  ],
+  "license": "MIT",
+  "repository": "privatenumber/manten",
+  "author": {
+    "name": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "require": "./dist/index.js",
+    "import": "./dist/index.mjs"
+  },
+  "imports": {
+    "#manten": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "dependencies": {
+    "expect": "^29.2.1"
+  }
+}
