@@ -32,6 +32,10 @@ export const logTestResult = (testMeta: TestMeta) => {
 };
 
 export const logReport = (allTests: TestMeta[]) => {
+	if (allTests.length === 0) {
+		return;
+	}
+
 	const unfinishedTests: TestMeta[] = [];
 	let passingTests = 0;
 	let failingTests = 0;
@@ -67,9 +71,8 @@ export const logReport = (allTests: TestMeta[]) => {
 		for (const test of unfinishedTests) {
 			output += `${newline}${inProgressIcon} ${test.title} ${prettyDuration(test)}`;
 		}
+		output += newline;
 	}
-
-	output += newline;
 
 	output += `${newline}Completed in ${prettyMs(lastEndTime! - firstStartTime!)}`;
 
