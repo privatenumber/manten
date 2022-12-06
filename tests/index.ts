@@ -1,8 +1,12 @@
 import { execaNode } from 'execa';
 import { test, expect, describe } from '#manten';
 
+const env = { NODE_DISABLE_COLORS: '0' };
 test('Failures should exit with 1', async () => {
-	const testProcess = await execaNode('./tests/specs/test-fail').catch(error => error);
+	const testProcess = await execaNode('./tests/specs/test-fail', {
+		env,
+		reject: false,
+	});
 
 	expect(testProcess.exitCode).toBe(1);
 	expect(testProcess.stdout).toBe('');
@@ -10,7 +14,7 @@ test('Failures should exit with 1', async () => {
 });
 
 test('synchronous', async () => {
-	const testProcess = await execaNode('./tests/specs/synchronous');
+	const testProcess = await execaNode('./tests/specs/synchronous', { env });
 
 	expect(testProcess.exitCode).toBe(0);
 	expect(testProcess.stdout).toBe('a\nb\nc\n✔ Async\n✔ B\n✔ C');
@@ -18,14 +22,14 @@ test('synchronous', async () => {
 
 describe('asynchronous', ({ test }) => {
 	test('sequential', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-sequential');
+		const testProcess = await execaNode('./tests/specs/asynchronous-sequential', { env });
 
 		expect(testProcess.exitCode).toBe(0);
 		expect(testProcess.stdout).toBe('✔ A\n✔ Group › B\n✔ Group › B\n✔ Group - async › C\n✔ Group - async › D\n✔ Group - async › Test suite - Group › A\n✔ Group - async › Test suite - Group › B\n✔ Group - async › Test suite - Group Async › C\n✔ Group - async › Test suite - Group Async › D\n✔ Group - async › Test suite - E\n✔ E');
 	});
 
 	test('concurrent', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent');
+		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent', { env });
 
 		expect(testProcess.exitCode).toBe(0);
 		expect(testProcess.stdout).toBe('✔ B\n✔ C\n✔ A');
@@ -34,6 +38,7 @@ describe('asynchronous', ({ test }) => {
 	test('timeout', async () => {
 		const startTime = Date.now();
 		const testProcess = await execaNode('./tests/specs/asynchronous-timeout', {
+			env,
 			reject: false,
 		});
 
