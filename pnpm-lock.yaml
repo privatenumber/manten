@@ -10,6 +10,7 @@ specifiers:
   expect: ^29.3.1
   kolorist: ^1.6.0
   pkgroll: ^1.7.0
+  pretty-ms: ^8.0.0
   tsx: ^3.12.1
   typescript: ^4.9.3
 
@@ -25,6 +26,7 @@ devDependencies:
   execa: 6.1.0
   kolorist: 1.6.0
   pkgroll: 1.7.0_typescript@4.9.3
+  pretty-ms: 8.0.0
   tsx: 3.12.1
   typescript: 4.9.3
 
@@ -2700,6 +2702,11 @@ packages:
       lines-and-columns: 1.2.4
     dev: true
 
+  /parse-ms/3.0.0:
+    resolution: {integrity: sha512-Tpb8Z7r7XbbtBTrM9UhpkzzaMrqA2VXMT3YChzYltwV3P3pM6t8wl7TvpMnSTosz1aQAdVib7kdoys7vYOPerw==}
+    engines: {node: '>=12'}
+    dev: true
+
   /path-exists/4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
     engines: {node: '>=8'}
@@ -2785,6 +2792,13 @@ packages:
       ansi-styles: 5.2.0
       react-is: 18.2.0
     dev: false
+
+  /pretty-ms/8.0.0:
+    resolution: {integrity: sha512-ASJqOugUF1bbzI35STMBUpZqdfYKlJugy6JBziGi2EE+AL5JPJGSzvpeVXojxrr0ViUYoToUjb5kjSEGf7Y83Q==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      parse-ms: 3.0.0
+    dev: true
 
   /prop-types/15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
