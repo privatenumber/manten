@@ -1,12 +1,12 @@
 import {
 	describe,
 	test,
-} from './top-level-context';
+} from './top-level-context.js';
 import type {
 	Context,
 	TestSuiteCallback,
 	TestSuite,
-} from './types';
+} from './types.js';
 
 const defaultContext: Context = {
 	describe,

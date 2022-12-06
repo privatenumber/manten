@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { pathToFileURL } from 'url';
 import { cli } from 'cleye';
-import { fsWalk } from './utils/fs-walk';
+import { fsWalk } from './utils/fs-walk.js';
 
 const argv = cli({
 	name: 'manten',

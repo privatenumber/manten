@@ -1,5 +1,5 @@
-import type { Describe, Context, PendingTests } from './types';
-import { createTest } from './create-test';
+import type { Describe, Context, PendingTests } from './types.js';
+import { createTest } from './create-test.js';
 
 /**
  * This accepts a promises array that can have more promises

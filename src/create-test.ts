@@ -4,7 +4,7 @@ import type {
 	TestApi,
 	onTestFailCallback,
 	PendingTests,
-} from './types';
+} from './types.js';
 
 const successIcon = green('✔');
 const failureIcon = red('✖');

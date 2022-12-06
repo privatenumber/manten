@@ -1,4 +1,3 @@
-// @ts-expect-error execa is ESM
 import { execaNode } from 'execa';
 import { test, expect, describe } from '#manten';
 

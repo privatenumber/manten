@@ -1,4 +1,4 @@
-import { setTimeout } from '../utils/set-timeout';
+import { setTimeout } from '../utils/set-timeout.js';
 import { test } from '#manten';
 
 test('A', async () => {
