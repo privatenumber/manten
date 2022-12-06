@@ -43,9 +43,11 @@ export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
 };
 
+export type TestFunction = (api: TestApi) => void;
+
 export type Test = (
 	title: string,
-	testFunction: (api: TestApi) => void,
+	testFunction: TestFunction,
 	timeout?: number,
 ) => Promise<void>;
 

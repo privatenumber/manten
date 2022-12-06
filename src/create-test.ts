@@ -3,6 +3,7 @@ import prettyMs from 'pretty-ms';
 import type {
 	Test,
 	TestApi,
+	TestFunction,
 	onTestFailCallback,
 	PendingTests,
 } from './types.js';
@@ -33,6 +34,57 @@ const startTimer = () => {
 	};
 };
 
+const runTest = async (
+	title: string,
+	testFunction: TestFunction,
+	timeout?: number,
+) => {
+	let onTestFail: undefined | onTestFailCallback;
+	const api: TestApi = {
+		onTestFail(callback) {
+			onTestFail = callback;
+		},
+	};
+
+	const getDuration = startTimer();
+	try {
+		if (timeout) {
+			const controller = { timeoutId: undefined };
+			try {
+				await Promise.race([
+					testFunction(api),
+					throwOnTimeout(timeout, controller),
+				]);
+			} finally {
+				clearTimeout(controller.timeoutId);
+			}
+		} else {
+			await testFunction(api);
+		}
+
+		consoleLog(successIcon, title + getDuration());
+	} catch (error: any) {
+		consoleError(failureIcon, title + getDuration());
+
+		// Remove "jest assertion error" matcherResult object
+		if (
+			error
+			&& typeof error === 'object'
+			&& 'matcherResult' in error
+			&& error.constructor.name === 'JestAssertionError'
+		) {
+			delete error.matcherResult;
+		}
+
+		consoleError(error);
+		process.exitCode = 1;
+
+		if (typeof onTestFail === 'function') {
+			onTestFail(error);
+		}
+	}
+};
+
 export function createTest(
 	prefix?: string,
 	pendingTests?: PendingTests,
@@ -46,52 +98,7 @@ export function createTest(
 			title = `${prefix} ${title}`;
 		}
 
-		const testRunning = (async () => {
-			let onTestFail: undefined | onTestFailCallback;
-			const api: TestApi = {
-				onTestFail(callback) {
-					onTestFail = callback;
-				},
-			};
-
-			const getDuration = startTimer();
-			try {
-				if (timeout) {
-					const controller = { timeoutId: undefined };
-					try {
-						await Promise.race([
-							testFunction(api),
-							throwOnTimeout(timeout, controller),
-						]);
-					} finally {
-						clearTimeout(controller.timeoutId);
-					}
-				} else {
-					await testFunction(api);
-				}
-
-				consoleLog(successIcon, title + getDuration());
-			} catch (error: any) {
-				consoleError(failureIcon, title + getDuration());
-
-				// Remove "jest assertion error" matcherResult object
-				if (
-					error
-					&& typeof error === 'object'
-					&& 'matcherResult' in error
-					&& error.constructor.name === 'JestAssertionError'
-				) {
-					delete error.matcherResult;
-				}
-
-				consoleError(error);
-				process.exitCode = 1;
-
-				if (typeof onTestFail === 'function') {
-					onTestFail(error);
-				}
-			}
-		})();
+		const testRunning = runTest(title, testFunction, timeout);
 
 		if (pendingTests) {
 			pendingTests.push(testRunning);
