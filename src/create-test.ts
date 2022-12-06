@@ -7,6 +7,8 @@ import type {
 	PendingTests,
 } from './types.js';
 
+const { log: consoleLog, error: consoleError } = console;
+
 const successIcon = green('✔');
 const failureIcon = red('✖');
 
@@ -68,9 +70,9 @@ export function createTest(
 					await testFunction(api);
 				}
 
-				console.log(successIcon, title + getDuration());
+				consoleLog(successIcon, title + getDuration());
 			} catch (error: any) {
-				console.error(failureIcon, title + getDuration());
+				consoleError(failureIcon, title + getDuration());
 
 				// Remove "jest assertion error" matcherResult object
 				if (
@@ -82,7 +84,7 @@ export function createTest(
 					delete error.matcherResult;
 				}
 
-				console.error(error);
+				consoleError(error);
 				process.exitCode = 1;
 
 				if (typeof onTestFail === 'function') {

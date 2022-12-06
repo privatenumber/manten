@@ -2,6 +2,17 @@ import { execaNode } from 'execa';
 import { test, expect, describe } from '#manten';
 
 const env = { NODE_DISABLE_COLORS: '0' };
+
+test('Should prevent console.log hijack', async () => {
+	const testProcess = await execaNode('./tests/specs/hijack-console-log', {
+		env,
+		reject: false,
+	});
+
+	expect(testProcess.exitCode).toBe(0);
+	expect(testProcess.stdout).toBe('✔ should log');
+});
+
 test('Failures should exit with 1', async () => {
 	const testProcess = await execaNode('./tests/specs/test-fail', {
 		env,
