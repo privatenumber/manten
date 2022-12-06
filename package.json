@@ -18,13 +18,18 @@
 	"files": [
 		"dist"
 	],
-	"main": "./dist/index.js",
+	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
+	"types": "./dist/index.d.cts",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"require": "./dist/index.js",
-		"import": "./dist/index.mjs"
+		"require": {
+			"types": "./dist/index.d.cts",
+			"default": "./dist/index.cjs"
+		},
+		"import": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
 	},
 	"imports": {
 		"#manten": {
@@ -51,7 +56,7 @@
 		"eslint": "^8.26.0",
 		"execa": "^6.1.0",
 		"kleur": "^4.1.5",
-		"pkgroll": "^1.4.0",
+		"pkgroll": "^1.7.0",
 		"tsx": "^3.11.0",
 		"typescript": "^4.8.4"
 	},
