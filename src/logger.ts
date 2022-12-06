@@ -17,7 +17,7 @@ const prettyDuration = ({ startTime, endTime }: TestMeta) => {
 	return (
 		duration < 50
 			? ''
-			: ` ${dim(`(${prettyMs(duration)})`)}`
+			: dim(`(${prettyMs(duration)})`)
 	);
 };
 
@@ -25,10 +25,7 @@ export const logTestResult = (testMeta: TestMeta) => {
 	const { title, error } = testMeta;
 	const logger = error ? consoleError : consoleLog;
 
-	logger(
-		error ? failureIcon : successIcon,
-		title + prettyDuration(testMeta),
-	);
+	logger(`${error ? failureIcon : successIcon} ${title} ${prettyDuration(testMeta)}`);
 };
 
 export const logReport = (allTests: TestMeta[]) => {
