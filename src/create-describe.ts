@@ -44,6 +44,15 @@ export function createDescribe(
 								maybeTestSuiteModule = maybeTestSuiteModule.default;
 							}
 
+							/**
+							 * When ESM is compiled to CJS, it's possible the entire module
+							 * gets assigned as an object o default. In this case,
+							 * it needs to be unwrapped again.
+							 */
+							if ('default' in maybeTestSuiteModule) {
+								maybeTestSuiteModule = maybeTestSuiteModule.default;
+							}
+
 							return maybeTestSuiteModule.apply(context, args);
 						})();
 
