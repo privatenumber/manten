@@ -1,4 +1,5 @@
-import { green, red } from 'kolorist';
+import { green, red, dim } from 'kolorist';
+import prettyMs from 'pretty-ms';
 import type {
 	Test,
 	TestApi,
@@ -17,6 +18,18 @@ const throwOnTimeout = async (
 		reject(new Error(`Timeout: ${duration}ms`));
 	}, duration);
 });
+
+const startTimer = () => {
+	const startTime = Date.now();
+	return () => {
+		const duration = Date.now() - startTime;
+		if (duration < 50) {
+			return '';
+		}
+
+		return ` ${dim(`(${prettyMs(duration)})`)}`;
+	};
+};
 
 export function createTest(
 	prefix?: string,
@@ -39,6 +52,7 @@ export function createTest(
 				},
 			};
 
+			const getDuration = startTimer();
 			try {
 				if (timeout) {
 					const controller = { timeoutId: undefined };
@@ -54,9 +68,9 @@ export function createTest(
 					await testFunction(api);
 				}
 
-				console.log(successIcon, title);
+				console.log(successIcon, title + getDuration());
 			} catch (error: any) {
-				console.error(failureIcon, title);
+				console.error(failureIcon, title + getDuration());
 
 				// Remove "jest assertion error" matcherResult object
 				if (
