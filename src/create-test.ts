@@ -12,7 +12,7 @@ const failureIcon = red('✖');
 const throwOnTimeout = async (
 	duration: number,
 	controller: { timeoutId?: NodeJS.Timeout },
-) => new Promise((resolve, reject) => {
+) => new Promise((_resolve, reject) => {
 	controller.timeoutId = setTimeout(() => {
 		reject(new Error(`Timeout: ${duration}ms`));
 	}, duration);
