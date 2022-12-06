@@ -1,4 +1,4 @@
-import { green, red } from 'kleur/colors'; // eslint-disable-line node/file-extension-in-import
+import { green, red } from 'kolorist';
 import type {
 	Test,
 	TestApi,
