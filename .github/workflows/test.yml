@@ -26,11 +26,14 @@ jobs:
         version: 7
         run_install: true
 
+    - name: Lint
+      run: pnpm lint
+
+    - name: Type check
+      run: pnpm type-check
+
     - name: Test
       run: |
         pnpm build
         pnpm test
         pnpm run --use-node-version=12.22.12 test
-
-    - name: Lint
-      run: pnpm lint
