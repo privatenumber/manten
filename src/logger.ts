@@ -12,12 +12,18 @@ const successIcon = green('✔');
 const failureIcon = red('✖');
 const inProgressIcon = yellow('•');
 
-const prettyDuration = ({ startTime, endTime }: TestMeta) => {
+const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	const duration = (endTime || Date.now()) - startTime!;
+	let formatted = prettyMs(duration);
+
+	if (timeout) {
+		formatted += '/' + prettyMs(timeout);
+	}
+
 	return (
 		duration < 50
 			? ''
-			: ` ${dim(`(${prettyMs(duration)})`)}`
+			: ` ${dim(`(${formatted})`)}`
 	);
 };
 
