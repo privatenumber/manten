@@ -43,7 +43,7 @@ export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
 };
 
-export type TestFunction = (api: TestApi) => void;
+type TestFunction = (api: TestApi) => void;
 
 export type Test = (
 	title: string,
@@ -63,3 +63,12 @@ export type Context = {
 };
 
 export type PendingTests = Promise<any>[];
+
+export type TestMeta = {
+	title: string;
+	testFunction: TestFunction;
+	timeout?: number;
+	startTime?: number;
+	endTime?: number;
+	error?: Error;
+};

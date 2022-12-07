@@ -1,17 +1,15 @@
-import { green, red, dim } from 'kolorist';
-import prettyMs from 'pretty-ms';
 import type {
 	Test,
 	TestApi,
-	TestFunction,
+	TestMeta,
 	onTestFailCallback,
 	PendingTests,
 } from './types.js';
-
-const { log: consoleLog, error: consoleError } = console;
-
-const successIcon = green('✔');
-const failureIcon = red('✖');
+import {
+	consoleError,
+	logTestResult,
+	logReport,
+} from './logger.js';
 
 const throwOnTimeout = async (
 	duration: number,
@@ -22,23 +20,9 @@ const throwOnTimeout = async (
 	}, duration);
 });
 
-const startTimer = () => {
-	const startTime = Date.now();
-	return () => {
-		const duration = Date.now() - startTime;
-		if (duration < 50) {
-			return '';
-		}
+const runTest = async (testMeta: TestMeta) => {
+	const { testFunction, timeout } = testMeta;
 
-		return ` ${dim(`(${prettyMs(duration)})`)}`;
-	};
-};
-
-const runTest = async (
-	title: string,
-	testFunction: TestFunction,
-	timeout?: number,
-) => {
 	let onTestFail: undefined | onTestFailCallback;
 	const api: TestApi = {
 		onTestFail(callback) {
@@ -46,7 +30,7 @@ const runTest = async (
 		},
 	};
 
-	const getDuration = startTimer();
+	testMeta.startTime = Date.now();
 	try {
 		if (timeout) {
 			const controller = { timeoutId: undefined };
@@ -62,9 +46,12 @@ const runTest = async (
 			await testFunction(api);
 		}
 
-		consoleLog(successIcon, title + getDuration());
+		testMeta.endTime = Date.now();
+		logTestResult(testMeta);
 	} catch (error: any) {
-		consoleError(failureIcon, title + getDuration());
+		testMeta.endTime = Date.now();
+		testMeta.error = error;
+		logTestResult(testMeta);
 
 		// Remove "jest assertion error" matcherResult object
 		if (
@@ -85,6 +72,12 @@ const runTest = async (
 	}
 };
 
+const allTests: TestMeta[] = [];
+
+process.on('exit', () => {
+	logReport(allTests);
+});
+
 export function createTest(
 	prefix?: string,
 	pendingTests?: PendingTests,
@@ -98,7 +91,14 @@ export function createTest(
 			title = `${prefix} ${title}`;
 		}
 
-		const testRunning = runTest(title, testFunction, timeout);
+		const testMeta = {
+			title,
+			testFunction,
+			timeout,
+		};
+		allTests.push(testMeta);
+
+		const testRunning = runTest(testMeta);
 
 		if (pendingTests) {
 			pendingTests.push(testRunning);
