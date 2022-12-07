@@ -81,16 +81,16 @@ export const logReport = (allTests: TestMeta[]) => {
 	output += `${newline}${dim(prettyMs(lastEndTime! - firstStartTime!))}`;
 
 	// Passed
-	output += newline + (passingTests > 0 ? green : dim)(`${passingTests} passed`);
+	output += newline + (passingTests > 0 ? green : dim)(`${passingTests.toLocaleString()} passed`);
 
 	// Failed
 	if (failedTests > 0) {
-		output += newline + red(`${failedTests} failed`);
+		output += newline + red(`${failedTests.toLocaleString()} failed`);
 	}
 
 	// Pending
 	if (unfinishedTests.length > 0) {
-		output += newline + yellow(`${unfinishedTests.length} pending`);
+		output += newline + yellow(`${unfinishedTests.length.toLocaleString()} pending`);
 	}
 
 	output += newline;
