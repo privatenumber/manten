@@ -17,7 +17,7 @@ const prettyDuration = ({ startTime, endTime }: TestMeta) => {
 	return (
 		duration < 50
 			? ''
-			: dim(`(${prettyMs(duration)})`)
+			: ` ${dim(`(${prettyMs(duration)})`)}`
 	);
 };
 
@@ -25,7 +25,7 @@ export const logTestResult = (testMeta: TestMeta) => {
 	const { title, error } = testMeta;
 	const logger = error ? consoleError : consoleLog;
 
-	logger(`${error ? failureIcon : successIcon} ${title} ${prettyDuration(testMeta)}`);
+	logger(`${error ? failureIcon : successIcon} ${title + prettyDuration(testMeta)}`);
 };
 
 export const logReport = (allTests: TestMeta[]) => {
@@ -35,7 +35,7 @@ export const logReport = (allTests: TestMeta[]) => {
 
 	const unfinishedTests: TestMeta[] = [];
 	let passingTests = 0;
-	let failingTests = 0;
+	let failedTests = 0;
 	let firstStartTime: number | undefined;
 	let lastEndTime: number | undefined;
 
@@ -55,7 +55,7 @@ export const logReport = (allTests: TestMeta[]) => {
 			}
 
 			if (test.error) {
-				failingTests += 1;
+				failedTests += 1;
 			} else {
 				passingTests += 1;
 			}
@@ -66,20 +66,23 @@ export const logReport = (allTests: TestMeta[]) => {
 
 	if (unfinishedTests.length > 0) {
 		for (const test of unfinishedTests) {
-			output += `${newline}${inProgressIcon} ${test.title} ${prettyDuration(test)}`;
+			output += `${newline}${inProgressIcon} ${test.title + prettyDuration(test)}`;
 		}
 		output += newline;
 	}
 
-	output += `${newline}Completed in ${prettyMs(lastEndTime! - firstStartTime!)}`;
+	// Elapsed
+	output += `${newline}${dim(prettyMs(lastEndTime! - firstStartTime!))}`;
 
-	const passing = `${passingTests} passing`;
-	output += newline + (passingTests > 0 ? green : dim)(passing);
+	// Passed
+	output += newline + (passingTests > 0 ? green : dim)(`${passingTests} passed`);
 
-	if (failingTests > 0) {
-		output += newline + red(`${failingTests} failing`);
+	// Failed
+	if (failedTests > 0) {
+		output += newline + red(`${failedTests} failed`);
 	}
 
+	// Pending
 	if (unfinishedTests.length > 0) {
 		output += newline + yellow(`${unfinishedTests.length} pending`);
 	}
