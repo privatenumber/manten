@@ -17,7 +17,7 @@ const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	let formatted = prettyMs(duration);
 
 	if (timeout) {
-		formatted += '/' + prettyMs(timeout);
+		formatted += ` / ${prettyMs(timeout)}`;
 	}
 
 	return (
