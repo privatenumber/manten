@@ -12,7 +12,7 @@ Lightweight testing library for Node.js
 - Async first design
 - Flow control via `async`/`await`
 - Strongly typed
-- Tiny! `781 B`
+- Tiny! `2.3 kB`
 
 ## Install
 ```sh
