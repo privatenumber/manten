@@ -1,5 +1,6 @@
 import type { Describe, Context, PendingTests } from './types.js';
 import { createTest } from './create-test.js';
+import { consoleError } from './logger.js';
 
 /**
  * This accepts a promises array that can have more promises
@@ -72,7 +73,8 @@ export function createDescribe(
 
 			await inProgress;
 		} catch (error) {
-			console.error(error);
+			consoleError(error);
+			process.exitCode = 1;
 		}
 	};
 }

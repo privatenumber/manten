@@ -15,6 +15,16 @@ test('Should prevent console.log hijack', async () => {
 	expect(testProcess.stdout).not.toMatch('failed');
 });
 
+test('describe should error', async () => {
+	const testProcess = await execaNode('./tests/specs/describe-error', {
+		env,
+		reject: false,
+	});
+
+	expect(testProcess.exitCode).toBe(1);
+	expect(testProcess.stderr).toMatch('Error: Error');
+});
+
 test('Failures should exit with 1', async () => {
 	const testProcess = await execaNode('./tests/specs/test-fail', {
 		env,
