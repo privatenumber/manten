@@ -7,5 +7,5 @@ console.log = noop;
 console.error = noop;
 
 describe('should fail', () => {
-	throw Error('Error');
+	throw new Error('Error');
 });
