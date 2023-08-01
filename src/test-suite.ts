@@ -31,7 +31,7 @@ const defaultContext: Context = {
 };
 
 export function testSuite<
-	Callback extends TestSuiteCallback<any[], any>,
+	Callback extends TestSuiteCallback<unknown[], unknown>,
 >(
 	callback: Callback,
 ): TestSuite<Callback> {

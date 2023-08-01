@@ -1,6 +1,5 @@
 import { describe } from '#manten';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {};
 
 console.log = noop;

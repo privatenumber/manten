@@ -1,7 +1,15 @@
-type InferCallback<
-	T extends (...args: any) => any,
+export type TestSuiteCallback<
+	T extends unknown[] = unknown[],
+	ReturnType = unknown,
 > = (
-	T extends (context: any, ...args: infer Args) => infer ReturnType
+	context: Context,
+	...args: T
+) => ReturnType;
+
+type InferCallback<
+	T extends TestSuiteCallback,
+> = (
+	T extends (context: unknown, ...args: infer Args) => infer ReturnType
 		? {
 			args: Args;
 			returnType: ReturnType;
@@ -9,16 +17,8 @@ type InferCallback<
 		: never
 );
 
-export type TestSuiteCallback<
-	T extends any[],
-	ReturnType,
-> = (
-	context: Context,
-	...args: T
-) => ReturnType;
-
 export type TestSuite<
-	Callback extends (...args: any) => any
+	Callback extends TestSuiteCallback // TestSuiteCallback ?
 > = (
 	this: void | Context,
 	...callbackArgs: InferCallback<Callback>['args']
@@ -29,7 +29,7 @@ type ModuleDefaultExport <defaultExport> =
 	| { default: { default: defaultExport } }; // ESM compiled to CJS
 
 type RunTestSuite = <
-	Callback extends TestSuiteCallback<any[], any>
+	Callback extends TestSuiteCallback<unknown[], unknown>
 >(
 	testSuite: TestSuite<Callback> | Promise<
 		ModuleDefaultExport<TestSuite<Callback>>
@@ -62,7 +62,7 @@ export type Context = {
 	runTestSuite: RunTestSuite;
 };
 
-export type PendingTests = Promise<any>[];
+export type PendingTests = Promise<unknown>[];
 
 export type TestMeta = {
 	title: string;

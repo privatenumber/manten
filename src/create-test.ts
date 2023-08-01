@@ -48,9 +48,9 @@ const runTest = async (testMeta: TestMeta) => {
 
 		testMeta.endTime = Date.now();
 		logTestResult(testMeta);
-	} catch (error: any) {
+	} catch (error) {
 		testMeta.endTime = Date.now();
-		testMeta.error = error;
+		testMeta.error = error as Error;
 		logTestResult(testMeta);
 
 		// Remove "jest assertion error" matcherResult object
@@ -67,7 +67,7 @@ const runTest = async (testMeta: TestMeta) => {
 		process.exitCode = 1;
 
 		if (typeof onTestFail === 'function') {
-			onTestFail(error);
+			onTestFail(error as Error);
 		}
 	}
 };

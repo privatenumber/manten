@@ -9,7 +9,6 @@ import { test, describe } from '#manten';
 	await describe('timeout to be cleaned up from event loop', ({ test }) => {
 		test(
 			'on pass',
-			// eslint-disable-next-line @typescript-eslint/no-empty-function
 			() => {},
 			5000,
 		);

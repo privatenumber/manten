@@ -9,7 +9,7 @@ import { consoleError } from './logger.js';
  * This keeps waiting on the new it until the promises array
  * is empty.
  */
-async function waitAllPromises(promises: Promise<any>[]) {
+async function waitAllPromises(promises: Promise<unknown>[]) {
 	while (promises.length > 0) {
 		const currentPromises = promises.splice(0);
 		await Promise.all(currentPromises);
