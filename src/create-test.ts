@@ -3,6 +3,7 @@ import type {
 	TestApi,
 	TestMeta,
 	onTestFailCallback,
+	onTestFinishCallback,
 	PendingTests,
 } from './types.js';
 import {
@@ -20,13 +21,24 @@ const throwOnTimeout = async (
 	}, duration);
 });
 
+type Callbacks = {
+	onTestFail: onTestFailCallback[];
+	onTestFinish: onTestFinishCallback[];
+};
+
 const runTest = async (testMeta: TestMeta) => {
 	const { testFunction, timeout } = testMeta;
+	const callbacks: Callbacks = {
+		onTestFail: [],
+		onTestFinish: [],
+	};
 
-	let onTestFail: undefined | onTestFailCallback;
 	const api: TestApi = {
 		onTestFail(callback) {
-			onTestFail = callback;
+			callbacks.onTestFail.push(callback);
+		},
+		onTestFinish(callback) {
+			callbacks.onTestFinish.push(callback);
 		},
 	};
 
@@ -45,13 +57,8 @@ const runTest = async (testMeta: TestMeta) => {
 		} else {
 			await testFunction(api);
 		}
-
-		testMeta.endTime = Date.now();
-		logTestResult(testMeta);
 	} catch (error) {
-		testMeta.endTime = Date.now();
 		testMeta.error = error as Error;
-		logTestResult(testMeta);
 
 		// Remove "jest assertion error" matcherResult object
 		if (
@@ -66,8 +73,15 @@ const runTest = async (testMeta: TestMeta) => {
 		consoleError(error);
 		process.exitCode = 1;
 
-		if (typeof onTestFail === 'function') {
-			onTestFail(error as Error);
+		for (const onTestFail of callbacks.onTestFail) {
+			await onTestFail(error as Error);
+		}
+	} finally {
+		testMeta.endTime = Date.now();
+		logTestResult(testMeta);
+
+		for (const onTestFinish of callbacks.onTestFinish) {
+			await onTestFinish();
 		}
 	}
 };

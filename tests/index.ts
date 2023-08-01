@@ -77,3 +77,26 @@ describe('asynchronous', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Error: Timeout: 1ms');
 	});
 });
+
+describe('hooks', async ({ test }) => {
+	let testFailCalled: Error;
+	let testFinishCalled = false;
+
+	await test('expected to fail', ({ onTestFail, onTestFinish }) => {
+		onTestFail((error) => {
+			testFailCalled = error;
+		});
+
+		onTestFinish(() => {
+			testFinishCalled = true;
+		});
+
+		throw new Error('hello');
+	});
+
+	test('confirm hooks', () => {
+		expect(testFailCalled).toBeInstanceOf(Error);
+		expect(testFinishCalled).toBe(true);
+		process.exitCode = 0;
+	});
+});
