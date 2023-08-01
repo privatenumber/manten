@@ -40,6 +40,6 @@
     }
   },
   "dependencies": {
-    "expect": "^29.4.3"
+    "expect": "^29.6.2"
   }
 }
