@@ -42,6 +42,7 @@
 	"scripts": {
 		"build": "pkgroll --minify",
 		"test": "tsx tests",
+		"test:tsd": "tsd --files ./tests/index.test-d.ts",
 		"lint": "eslint --cache .",
 		"type-check": "tsc --noEmit",
 		"dev": "tsx watch --conditions=development tests",
@@ -60,6 +61,7 @@
 		"kolorist": "^1.8.0",
 		"pkgroll": "^1.10.0",
 		"pretty-ms": "^8.0.0",
+		"tsd": "^0.28.1",
 		"tsx": "^3.12.7",
 		"typescript": "^5.1.6"
 	},

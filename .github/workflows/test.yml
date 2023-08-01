@@ -35,5 +35,6 @@ jobs:
     - name: Test
       run: |
         pnpm build
+        pnpm test:tsd
         pnpm test
         pnpm run --use-node-version=18.17.0 test
