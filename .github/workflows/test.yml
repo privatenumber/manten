@@ -36,4 +36,4 @@ jobs:
       run: |
         pnpm build
         pnpm test
-        pnpm run --use-node-version=12.22.12 test
+        pnpm run --use-node-version=18.17.0 test
