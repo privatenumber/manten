@@ -1,5 +1,5 @@
 import { expectType } from 'tsd';
 import { testSuite } from '#manten';
 
-const importedTestSuite = testSuite((context, value: string) => 1234);
-expectType<(value: string) => number>(importedTestSuite);
+const importedTestSuite = testSuite((_context, _a: string, _b: number, _c: 'hello') => 1234);
+expectType<(_a: string, _b: number, _c: 'hello') => number>(importedTestSuite);
