@@ -25,7 +25,7 @@ import { test, describe } from '#manten';
 			await setTimeout(10);
 		});
 
-		runTestSuite(import('./test-suite.js'));
+		runTestSuite(import('./test-suite.js'), 'hello world');
 	});
 
 	await test('E', async () => {

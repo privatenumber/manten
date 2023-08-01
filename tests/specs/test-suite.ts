@@ -1,7 +1,9 @@
 import { setTimeout } from '../utils/set-timeout.js';
-import { testSuite } from '#manten';
+import { testSuite, expect } from '#manten';
 
-export default testSuite(({ describe, test }) => {
+export default testSuite(({ describe, test }, value: string) => {
+	expect<string>(value).toBe('hello world');
+
 	describe('Test suite - Group', ({ test }) => {
 		test('A', async () => {
 			await setTimeout(10);
