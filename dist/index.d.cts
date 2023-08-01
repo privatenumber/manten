@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { AsyncLocalStorage } from 'async_hooks';
 
-type TestSuiteCallback<T extends unknown[] = unknown[], ReturnType = unknown> = (context: Context, ...args: T) => ReturnType;
+type TestSuiteCallback<T extends any[] = any[], ReturnType = unknown> = (context: Context, ...args: T) => ReturnType;
 type InferCallback<T extends TestSuiteCallback> = (T extends TestSuiteCallback<infer Args, infer ReturnType> ? {
     args: Args;
     returnType: ReturnType;
@@ -33,7 +33,7 @@ type Context = {
 declare const test: Test;
 declare const describe: Describe;
 
-declare function testSuite<Callback extends TestSuiteCallback<unknown[], unknown>>(callback: Callback): TestSuite<Callback>;
+declare function testSuite<Callback extends TestSuiteCallback>(callback: Callback): TestSuite<Callback>;
 
 declare type EqualsFunction = (
   a: unknown,
