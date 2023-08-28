@@ -1,43 +1,20 @@
-import {
-	describe,
-	test,
-} from './top-level-context.js';
 import type {
-	Context,
 	TestSuiteCallback,
 	TestSuite,
 } from './types.js';
+import { createContext } from './create-context.js';
 
-const defaultContext: Context = {
-	describe,
-	test,
-	runTestSuite: async (
-		testSuiteImport,
-		...args
-	) => {
-		let testSuiteModule = await testSuiteImport;
-
-		if ('default' in testSuiteModule) {
-			testSuiteModule = testSuiteModule.default;
-		}
-
-		// Handle twice if ESM is compiled to CJS
-		if ('default' in testSuiteModule) {
-			testSuiteModule = testSuiteModule.default;
-		}
-
-		return testSuiteModule.apply(defaultContext, args);
-	},
-};
+const defaultContext = createContext();
 
 export function testSuite<
 	Callback extends TestSuiteCallback,
 >(
 	callback: Callback,
 ): TestSuite<Callback> {
-	return function (...callbackArgs) {
-		return callback(
-			this || defaultContext,
+	return async function (...callbackArgs) {
+		const context = this || defaultContext;
+		await callback(
+			context,
 			...callbackArgs,
 		);
 	};

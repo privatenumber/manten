@@ -38,11 +38,12 @@ type RunTestSuite = <
 	...args: InferCallback<Callback>['args']
 ) => InferCallback<Callback>['returnType'];
 
+export type Callback = () => void;
+
 export type onTestFailCallback = (error: Error) => void;
-export type onTestFinishCallback = () => void;
 export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
-	onTestFinish: (callback: onTestFinishCallback) => void;
+	onTestFinish: (callback: Callback) => void;
 };
 
 type TestFunction = (api: TestApi) => void;
@@ -62,6 +63,11 @@ export type Context = {
 	describe: Describe;
 	test: Test;
 	runTestSuite: RunTestSuite;
+	onFinish: (callback: Callback) => void;
+	pendingTests: PendingTests;
+	callbacks: {
+		onFinish: Callback[];
+	};
 };
 
 export type PendingTests = Promise<unknown>[];

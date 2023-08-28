@@ -78,25 +78,29 @@ describe('asynchronous', ({ test }) => {
 	});
 });
 
-describe('hooks', async ({ test }) => {
-	let testFailCalled: Error;
-	let testFinishCalled = false;
-
-	await test('expected to fail', ({ onTestFail, onTestFinish }) => {
-		onTestFail((error) => {
-			testFailCalled = error;
-		});
-
-		onTestFinish(() => {
-			testFinishCalled = true;
-		});
-
-		throw new Error('hello');
+test('hooks', async () => {
+	const testProcess = await execaNode('./tests/specs/hooks', {
+		env,
+		reject: false,
 	});
 
-	test('confirm hooks', () => {
-		expect(testFailCalled).toBeInstanceOf(Error);
-		expect(testFinishCalled).toBe(true);
-		process.exitCode = 0;
-	});
+	expect(testProcess.exitCode).toBe(1);
+	const { stdout } = testProcess;
+	const expectedOrder = [
+		'test start',
+		'test error hello',
+		'test finish',
+		'test suite start',
+		'test suite describe start',
+		'test suite describe finish',
+		'describe finish',
+		'test suite finish',
+	];
+
+	const matches = expectedOrder
+		.map(line => [line, stdout.indexOf(line)] as const)
+		.sort((lineA, lineB) => lineA[1] - lineB[1])
+		.map(([line]) => line);
+
+	expect(matches).toStrictEqual(expectedOrder);
 });

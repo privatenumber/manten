@@ -3,7 +3,7 @@ import type {
 	TestApi,
 	TestMeta,
 	onTestFailCallback,
-	onTestFinishCallback,
+	Callback,
 	PendingTests,
 } from './types.js';
 import {
@@ -23,7 +23,7 @@ const throwOnTimeout = async (
 
 type Callbacks = {
 	onTestFail: onTestFailCallback[];
-	onTestFinish: onTestFinishCallback[];
+	onTestFinish: Callback[];
 };
 
 const runTest = async (testMeta: TestMeta) => {
