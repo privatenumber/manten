@@ -1,6 +1,18 @@
 import { execaNode } from 'execa';
 import { test, expect, describe } from '#manten';
 
+const expectMatchInOrder = (
+	stdout: string,
+	expectedOrder: string[],
+) => {
+	const matches = expectedOrder
+		.map(line => [line, stdout.indexOf(line)] as const)
+		.sort((lineA, lineB) => lineA[1] - lineB[1])
+		.map(([line]) => line);
+
+	expect(matches).toStrictEqual(expectedOrder);
+};
+
 const env = { NODE_DISABLE_COLORS: '0' };
 
 test('Should prevent console.log hijack', async () => {
@@ -58,7 +70,11 @@ describe('asynchronous', ({ test }) => {
 		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent', { env });
 
 		expect(testProcess.exitCode).toBe(0);
-		expect(testProcess.stdout).toMatch('✔ B\n✔ C\n✔ A');
+		expectMatchInOrder(testProcess.stdout, [
+			'✔ B',
+			'✔ C',
+			'✔ A',
+		]);
 		expect(testProcess.stdout).toMatch('3 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
 	});
@@ -85,8 +101,7 @@ test('hooks', async () => {
 	});
 
 	expect(testProcess.exitCode).toBe(1);
-	const { stdout } = testProcess;
-	const expectedOrder = [
+	expectMatchInOrder(testProcess.stdout, [
 		'test start',
 		'test error hello',
 		'test finish',
@@ -95,12 +110,5 @@ test('hooks', async () => {
 		'test suite describe finish',
 		'describe finish',
 		'test suite finish',
-	];
-
-	const matches = expectedOrder
-		.map(line => [line, stdout.indexOf(line)] as const)
-		.sort((lineA, lineB) => lineA[1] - lineB[1])
-		.map(([line]) => line);
-
-	expect(matches).toStrictEqual(expectedOrder);
+	]);
 });
