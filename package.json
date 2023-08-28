@@ -73,7 +73,8 @@
 				{
 					"allow": [
 						"describe",
-						"test"
+						"test",
+						"onFinish"
 					]
 				}
 			]
