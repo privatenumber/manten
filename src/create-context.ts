@@ -3,7 +3,7 @@ import type {
 	PendingTests,
 } from './types.js';
 import { createTest } from './create-test.js';
-import { createDescribe } from './create-describe.js';
+import { createDescribe } from './create-describe.js'; // eslint-disable-line import/no-cycle
 import {
 	describe as topLevelDescribe,
 	test as topLevelTest,

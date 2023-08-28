@@ -1,5 +1,4 @@
-import { setTimeout } from '../utils/set-timeout.js';
-import { test, describe, testSuite } from '#manten';
+import { describe, testSuite } from '#manten';
 
 describe('describe', ({ test, onFinish, runTestSuite }) => {
 	onFinish(() => {

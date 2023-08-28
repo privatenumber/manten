@@ -4,7 +4,7 @@ import type {
 } from './types.js';
 import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
-import { createContext } from './create-context.js';
+import { createContext } from './create-context.js'; // eslint-disable-line import/no-cycle
 
 export function createDescribe(
 	prefix?: string,
