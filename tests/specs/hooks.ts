@@ -19,7 +19,7 @@ describe('describe', ({ test, onFinish, runTestSuite }) => {
 		throw new Error('hello');
 	});
 
-	runTestSuite(testSuite(async ({ describe, onFinish }) => {
+	runTestSuite(testSuite(({ describe, onFinish }) => {
 		console.log('test suite start');
 
 		onFinish(() => {
