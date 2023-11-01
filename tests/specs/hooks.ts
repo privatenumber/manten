@@ -1,11 +1,11 @@
 import { describe, testSuite } from '#manten';
 
-describe('describe', ({ test, onFinish, runTestSuite }) => {
+describe('describe', async ({ test, onFinish, runTestSuite }) => {
 	onFinish(() => {
 		console.log('describe finish');
 	});
 
-	test('hooks', ({ onTestFail, onTestFinish }) => {
+	await test('hooks', ({ onTestFail, onTestFinish }) => {
 		console.log('test start');
 		onTestFail((error) => {
 			console.log('test error', error.message);
@@ -18,7 +18,19 @@ describe('describe', ({ test, onFinish, runTestSuite }) => {
 		throw new Error('hello');
 	});
 
-	runTestSuite(testSuite(({ describe, onFinish }) => {
+	await test('failing hooks', ({ onTestFail, onTestFinish }) => {
+		onTestFail((error) => {
+			throw error;
+		});
+
+		onTestFinish(() => {
+			throw new Error('goodbye');
+		});
+
+		throw new Error('hello');
+	});
+
+	await runTestSuite(testSuite(({ describe, onFinish }) => {
 		console.log('test suite start');
 
 		onFinish(() => {

@@ -74,15 +74,25 @@ const runTest = async (testMeta: TestMeta) => {
 		process.exitCode = 1;
 
 		for (const onTestFail of callbacks.onTestFail) {
-			await onTestFail(error as Error);
+			try {
+				await onTestFail(error as Error);
+			} catch (error) {
+				consoleError('[onTestFail]', testMeta.title);
+				consoleError(error);
+			}
 		}
 	} finally {
+		for (const onTestFinish of callbacks.onTestFinish) {
+			try {
+				await onTestFinish();
+			} catch (error) {
+				consoleError('[onTestFinish]', testMeta.title);
+				consoleError(error);
+			}
+		}
+
 		testMeta.endTime = Date.now();
 		logTestResult(testMeta);
-
-		for (const onTestFinish of callbacks.onTestFinish) {
-			await onTestFinish();
-		}
 	}
 };
 
