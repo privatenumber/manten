@@ -42,24 +42,7 @@ const runTest = async (testMeta: TestMeta) => {
 		},
 	};
 
-	testMeta.startTime = Date.now();
-	try {
-		if (timeout) {
-			const controller = { timeoutId: undefined };
-			try {
-				await Promise.race([
-					testFunction(api),
-					throwOnTimeout(timeout, controller),
-				]);
-			} finally {
-				clearTimeout(controller.timeoutId);
-			}
-		} else {
-			await testFunction(api);
-		}
-	} catch (error) {
-		testMeta.error = error as Error;
-
+	const handleError = async (error: Error) => {
 		// Remove "jest assertion error" matcherResult object
 		if (
 			error
@@ -76,18 +59,41 @@ const runTest = async (testMeta: TestMeta) => {
 		for (const onTestFail of callbacks.onTestFail) {
 			try {
 				await onTestFail(error as Error);
-			} catch (error) {
+			} catch (hookError) {
 				consoleError('[onTestFail]', testMeta.title);
-				consoleError(error);
+				consoleError(hookError);
 			}
 		}
+
+		return error;
+	};
+
+	testMeta.startTime = Date.now();
+	try {
+		if (timeout) {
+			const controller = { timeoutId: undefined };
+			try {
+				await Promise.race([
+					testFunction(api),
+					throwOnTimeout(timeout, controller),
+				]);
+			} finally {
+				clearTimeout(controller.timeoutId);
+			}
+		} else {
+			await testFunction(api);
+		}
+	} catch (error) {
+		testMeta.error = await handleError(error as Error);
 	} finally {
 		for (const onTestFinish of callbacks.onTestFinish) {
 			try {
 				await onTestFinish();
-			} catch (error) {
-				consoleError('[onTestFinish]', testMeta.title);
-				consoleError(error);
+			} catch (_error) {
+				const error = await handleError(_error as Error);
+				if (!testMeta.error) {
+					testMeta.error = error;
+				}
 			}
 		}
 

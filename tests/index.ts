@@ -15,7 +15,7 @@ const expectMatchInOrder = (
 				remainingStdout,
 				stdout,
 			});
-			throw new Error(`Expected ${JSON.stringify(currentElement)} ${previousElement ? 'to be after ' + JSON.stringify(previousElement) : ''}`);
+			throw new Error(`Expected ${JSON.stringify(currentElement)} ${previousElement ? `to be after ${JSON.stringify(previousElement)}` : ''}`);
 		}
 		remainingStdout = remainingStdout.slice(index + currentElement.length);
 	}
@@ -125,8 +125,8 @@ test('hooks', async () => {
 		'Error: hello\n',
 		'[onTestFail] describe › failing hooks\n',
 		'Error: hello\n',
-		'[onTestFinish] describe › failing hooks\n',
 		'Error: goodbye\n',
+		'[onTestFail] describe › failing hooks\n',
 		'✖ describe › failing hooks',
 	]);
 });
