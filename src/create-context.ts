@@ -18,8 +18,16 @@ export const createContext = (
 
 	const pendingTests: PendingTests = [];
 
-	const test = description ? createTest(`${description} ›`, pendingTests) : topLevelTest;
-	const describe = description ? createDescribe(`${description} ›`, pendingTests) : topLevelDescribe;
+	const test = (
+		description
+			? createTest(`${description} ›`, pendingTests)
+			: topLevelTest
+	);
+	const describe = (
+		description
+			? createDescribe(`${description} ›`, pendingTests)
+			: topLevelDescribe
+	);
 
 	const context: Context = {
 		test,

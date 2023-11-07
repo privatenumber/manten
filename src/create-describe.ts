@@ -6,14 +6,14 @@ import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
 import { createContext } from './create-context.js'; // eslint-disable-line import/no-cycle
 
-export function createDescribe(
+export const createDescribe = (
 	prefix?: string,
 	pendingTests?: PendingTests,
-): Describe {
-	return async function describe(
+): Describe => (
+	async (
 		description,
 		callback,
-	) {
+	) => {
 		if (prefix) {
 			description = `${prefix} ${description}`;
 		}
@@ -39,5 +39,5 @@ export function createDescribe(
 				await onFinish();
 			}
 		}
-	};
-}
+	}
+);

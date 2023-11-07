@@ -108,15 +108,15 @@ process.on('exit', () => {
 	logReport(allTests);
 });
 
-export function createTest(
+export const createTest = (
 	prefix?: string,
 	pendingTests?: PendingTests,
-): Test {
-	return async function test(
+): Test => (
+	async (
 		title,
 		testFunction,
 		timeout,
-	) {
+	) => {
 		if (prefix) {
 			title = `${prefix} ${title}`;
 		}
@@ -135,5 +135,5 @@ export function createTest(
 		}
 
 		await testRunning;
-	};
-}
+	}
+);

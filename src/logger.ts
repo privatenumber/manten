@@ -6,7 +6,10 @@ import type { TestMeta } from './types.js';
 
 const newline = '\n';
 
-export const { log: consoleLog, error: consoleError } = console;
+export const {
+	log: consoleLog,
+	error: consoleError,
+} = console;
 
 const successIcon = green('✔');
 const failureIcon = red('✖');
