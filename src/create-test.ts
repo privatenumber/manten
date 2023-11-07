@@ -42,6 +42,32 @@ const runTest = async (testMeta: TestMeta) => {
 		},
 	};
 
+	const handleError = async (error: Error) => {
+		// Remove "jest assertion error" matcherResult object
+		if (
+			error
+			&& typeof error === 'object'
+			&& 'matcherResult' in error
+			&& error.constructor.name === 'JestAssertionError'
+		) {
+			delete error.matcherResult;
+		}
+
+		consoleError(error);
+		process.exitCode = 1;
+
+		for (const onTestFail of callbacks.onTestFail) {
+			try {
+				await onTestFail(error as Error);
+			} catch (hookError) {
+				consoleError('[onTestFail]', testMeta.title);
+				consoleError(hookError);
+			}
+		}
+
+		return error;
+	};
+
 	testMeta.startTime = Date.now();
 	try {
 		if (timeout) {
@@ -58,31 +84,21 @@ const runTest = async (testMeta: TestMeta) => {
 			await testFunction(api);
 		}
 	} catch (error) {
-		testMeta.error = error as Error;
-
-		// Remove "jest assertion error" matcherResult object
-		if (
-			error
-			&& typeof error === 'object'
-			&& 'matcherResult' in error
-			&& error.constructor.name === 'JestAssertionError'
-		) {
-			delete error.matcherResult;
-		}
-
-		consoleError(error);
-		process.exitCode = 1;
-
-		for (const onTestFail of callbacks.onTestFail) {
-			await onTestFail(error as Error);
-		}
+		testMeta.error = await handleError(error as Error);
 	} finally {
+		for (const onTestFinish of callbacks.onTestFinish) {
+			try {
+				await onTestFinish();
+			} catch (_error) {
+				const error = await handleError(_error as Error);
+				if (!testMeta.error) {
+					testMeta.error = error;
+				}
+			}
+		}
+
 		testMeta.endTime = Date.now();
 		logTestResult(testMeta);
-
-		for (const onTestFinish of callbacks.onTestFinish) {
-			await onTestFinish();
-		}
 	}
 };
 

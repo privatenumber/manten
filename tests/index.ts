@@ -5,12 +5,20 @@ const expectMatchInOrder = (
 	stdout: string,
 	expectedOrder: string[],
 ) => {
-	const matches = expectedOrder
-		.map(line => [line, stdout.indexOf(line)] as const)
-		.sort((lineA, lineB) => lineA[1] - lineB[1])
-		.map(([line]) => line);
-
-	expect(matches).toStrictEqual(expectedOrder);
+	let remainingStdout = stdout;
+	for (let i = 0; i < expectedOrder.length; i += 1) {
+		const previousElement = i > 0 ? expectedOrder[i - 1] : undefined;
+		const currentElement = expectedOrder[i];
+		const index = remainingStdout.indexOf(currentElement);
+		if (index === -1) {
+			console.log({
+				remainingStdout,
+				stdout,
+			});
+			throw new Error(`Expected ${JSON.stringify(currentElement)} ${previousElement ? `to be after ${JSON.stringify(previousElement)}` : ''}`);
+		}
+		remainingStdout = remainingStdout.slice(index + currentElement.length);
+	}
 };
 
 const env = { NODE_DISABLE_COLORS: '0' };
@@ -110,5 +118,15 @@ test('hooks', async () => {
 		'test suite describe finish',
 		'describe finish',
 		'test suite finish',
+	]);
+	expectMatchInOrder(testProcess.stderr, [
+		'Error: hello\n',
+		'✖ describe › hooks\n',
+		'Error: hello\n',
+		'[onTestFail] describe › failing hooks\n',
+		'Error: hello\n',
+		'Error: goodbye\n',
+		'[onTestFail] describe › failing hooks\n',
+		'✖ describe › failing hooks',
 	]);
 });
