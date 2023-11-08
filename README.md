@@ -14,6 +14,18 @@ Lightweight testing library for Node.js
 - Strongly typed
 - Tiny! `2.3 kB`
 
+<br>
+
+<p align="center">
+	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum">
+		<picture>
+			<source width="830" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image=dark">
+			<source width="830" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image">
+			<img width="830" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image" alt="Premium sponsor banner">
+		</picture>
+	</a>
+</p>
+
 ## Install
 ```sh
 npm i -D manten
@@ -243,6 +255,68 @@ describe('Group', ({ runTestSuite }) => {
 })
 ```
 
+### Hooks
+
+#### Test hooks
+
+##### `onTestFail`
+
+By using the `onTestFail` hook, you can debug tests by logging relevant information when a test fails.
+
+```ts
+test('Test', async ({ onTestFail }) => {
+    const fixture = await createFixture()
+    onTestFail(async (error) => {
+        console.log(error)
+        console.log('inspect directory:', fixture.path)
+    })
+
+    throw new Error('Test failed')
+})
+```
+
+
+##### `onTestFinish`
+
+By using the `onTestFinish` hook, you can execute cleanup code after the test finishes, even if it errors.
+
+```ts
+test('Test', async ({ onTestFinish }) => {
+    const fixture = await createFixture()
+    onTestFinish(async () => await fixture.remove())
+
+    throw new Error('Test failed')
+})
+```
+
+#### Describe hooks
+
+##### `onFinish`
+
+Similarly to `onTestFinish`, you can execute cleanup code after all tests in a `describe()` finish.
+
+```ts
+describe('Describe', ({ test, onFinish }) => {
+    const fixture = await createFixture()
+    onFinish(async () => await fixture.remove())
+
+    test('Check fixture', () => {
+        // ...
+    })
+})
+```
+
+<p align="center">
+	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold">
+		<picture>
+			<source width="830" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image=dark">
+			<source width="830" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image">
+			<img width="830" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=gold&image" alt="Premium sponsor banner">
+		</picture>
+	</a>
+</p>
+
+
 ## Examples
 
 ### Testing a script in different versions of Node.js
@@ -377,3 +451,28 @@ test('My test', async () => {
 ### [fs-fixture](https://github.com/privatenumber/fs-fixture)
 
 Easily create test fixtures at a temporary file-system path.
+
+## Sponsors
+
+<p align="center">
+	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1">
+		<picture>
+			<source width="410" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image=dark">
+			<source width="410" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image">
+			<img width="410" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver1&image" alt="Premium sponsor banner">
+		</picture>
+	</a>
+	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2">
+		<picture>
+			<source width="410" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image=dark">
+			<source width="410" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image">
+			<img width="410" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=silver2&image" alt="Premium sponsor banner">
+		</picture>
+	</a>
+</p>
+
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber">
+		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
+	</a>
+</p>
