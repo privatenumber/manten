@@ -4,7 +4,7 @@ import type {
 	TestMeta,
 	onTestFailCallback,
 	Callback,
-	PendingTests,
+	Context,
 } from './types.js';
 import {
 	consoleError,
@@ -110,7 +110,7 @@ process.on('exit', () => {
 
 export const createTest = (
 	prefix?: string,
-	pendingTests?: PendingTests,
+	parentContext?: Context,
 ): Test => (
 	async (
 		title,
@@ -130,8 +130,8 @@ export const createTest = (
 
 		const testRunning = runTest(testMeta);
 
-		if (pendingTests) {
-			pendingTests.push(testRunning);
+		if (parentContext) {
+			parentContext.pendingTests.push(testRunning);
 		}
 
 		await testRunning;

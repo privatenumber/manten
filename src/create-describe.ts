@@ -1,6 +1,6 @@
 import type {
 	Describe,
-	PendingTests,
+	Context,
 } from './types.js';
 import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
@@ -8,7 +8,7 @@ import { createContext } from './create-context.js'; // eslint-disable-line impo
 
 export const createDescribe = (
 	prefix?: string,
-	pendingTests?: PendingTests,
+	parentContext?: Context,
 ): Describe => (
 	async (
 		description,
@@ -26,8 +26,8 @@ export const createDescribe = (
 				await waitAllPromises(context.pendingTests);
 			})();
 
-			if (pendingTests) {
-				pendingTests.push(inProgress);
+			if (parentContext) {
+				parentContext.pendingTests.push(inProgress);
 			}
 
 			await inProgress;

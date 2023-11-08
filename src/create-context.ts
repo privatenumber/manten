@@ -1,7 +1,5 @@
 import type {
 	Context,
-	PendingTests,
-	onFinish,
 } from './types.js';
 import { createTest } from './create-test.js';
 import { createDescribe } from './create-describe.js'; // eslint-disable-line import/no-cycle
@@ -14,46 +12,35 @@ import { createRunTestSuite } from './create-run-test-suite.js';
 export const createContext = (
 	description?: string,
 ): Context => {
-	const callbacks: Context['callbacks'] = {
-		onFinish: [],
-	};
-
-	const pendingTests: PendingTests = [];
-
-	const test = (
-		description
-			? createTest(
-				`${description} ›`,
-				pendingTests,
-			)
-			: topLevelTest
-	);
-
-	const describe = (
-		description
-			? createDescribe(
-				`${description} ›`,
-				pendingTests,
-			)
-			: topLevelDescribe
-	);
-
-	const onFinish: onFinish = (callback) => {
-		callbacks.onFinish.push(callback);
-	};
-
 	const context = {
-		api: {},
-		pendingTests,
-		callbacks,
-	};
+		pendingTests: [],
+		callbacks: {
+			onFinish: [],
+		},
+	} as unknown as Context;
 
 	context.api = {
-		test,
-		describe,
-		runTestSuite: createRunTestSuite(context as Context),
-		onFinish,
+		test: (
+			description
+				? createTest(
+					`${description} ›`,
+					context,
+				)
+				: topLevelTest
+		),
+		describe: (
+			description
+				? createDescribe(
+					`${description} ›`,
+					context,
+				)
+				: topLevelDescribe
+		),
+		runTestSuite: createRunTestSuite(context),
+		onFinish: (callback) => {
+			context.callbacks.onFinish.push(callback);
+		},
 	};
 
-	return context as Context;
+	return context;
 };
