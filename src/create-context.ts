@@ -1,9 +1,9 @@
 import type {
 	Context,
 	PendingTests,
-	RunTestSuite,
 	onFinish,
 } from './types.js';
+import type { RunTestSuite } from './test-suite.js';
 import { createTest } from './create-test.js';
 import { createDescribe } from './create-describe.js'; // eslint-disable-line import/no-cycle
 import {

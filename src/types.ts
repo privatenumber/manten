@@ -1,42 +1,4 @@
-export type TestSuiteCallback<
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	T extends any[] = any[],
-	ReturnType = unknown,
-> = (
-	api: DescribeApi,
-	...args: T
-) => ReturnType;
-
-type InferCallback<
-	T extends TestSuiteCallback,
-> = (
-	T extends TestSuiteCallback<infer Args, infer ReturnType>
-		? {
-			args: Args;
-			returnType: ReturnType;
-		}
-		: never
-);
-
-export type TestSuite<
-	Callback extends TestSuiteCallback
-> = (
-	this: void | Context,
-	...callbackArgs: InferCallback<Callback>['args']
-) => InferCallback<Callback>['returnType'];
-
-type ModuleDefaultExport <defaultExport> =
-	{ default: defaultExport }
-	| { default: { default: defaultExport } }; // ESM compiled to CJS
-
-export type RunTestSuite = <
-	Callback extends TestSuiteCallback
->(
-	testSuite: TestSuite<Callback> | Promise<
-		ModuleDefaultExport<TestSuite<Callback>>
-	>,
-	...args: InferCallback<Callback>['args']
-) => InferCallback<Callback>['returnType'];
+import type { RunTestSuite } from './test-suite.js';
 
 export type Callback = () => void;
 
