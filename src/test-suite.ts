@@ -14,7 +14,7 @@ export const testSuite = <
 		async function (...callbackArgs) {
 			const context = this || defaultContext;
 			await callback(
-				context,
+				context.api,
 				...callbackArgs,
 			);
 		}

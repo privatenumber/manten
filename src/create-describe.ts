@@ -22,7 +22,7 @@ export const createDescribe = (
 
 		try {
 			const inProgress = (async () => {
-				await callback(context);
+				await callback(context.api);
 				await waitAllPromises(context.pendingTests);
 			})();
 

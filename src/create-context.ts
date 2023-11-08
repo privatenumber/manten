@@ -30,37 +30,39 @@ export const createContext = (
 	);
 
 	const context: Context = {
-		test,
-		describe,
-		runTestSuite: (
-			testSuite,
-			...args
-		) => {
-			const runningTestSuite = (async () => {
-				let maybeTestSuiteModule = await testSuite;
+		api: {
+			test,
+			describe,
+			runTestSuite: (
+				testSuite,
+				...args
+			) => {
+				const runningTestSuite = (async () => {
+					let maybeTestSuiteModule = await testSuite;
 
-				if ('default' in maybeTestSuiteModule) {
-					maybeTestSuiteModule = maybeTestSuiteModule.default;
-				}
+					if ('default' in maybeTestSuiteModule) {
+						maybeTestSuiteModule = maybeTestSuiteModule.default;
+					}
 
-				/**
-				 * When ESM is compiled to CJS, it's possible the entire module
-				 * gets assigned as an object o default. In this case,
-				 * it needs to be unwrapped again.
-				 */
-				if ('default' in maybeTestSuiteModule) {
-					maybeTestSuiteModule = maybeTestSuiteModule.default;
-				}
+					/**
+					 * When ESM is compiled to CJS, it's possible the entire module
+					 * gets assigned as an object o default. In this case,
+					 * it needs to be unwrapped again.
+					 */
+					if ('default' in maybeTestSuiteModule) {
+						maybeTestSuiteModule = maybeTestSuiteModule.default;
+					}
 
-				return maybeTestSuiteModule.apply(context, args);
-			})();
+					return maybeTestSuiteModule.apply(context, args);
+				})();
 
-			pendingTests.push(runningTestSuite);
+				pendingTests.push(runningTestSuite);
 
-			return runningTestSuite;
-		},
-		onFinish(callback) {
-			callbacks.onFinish.push(callback);
+				return runningTestSuite;
+			},
+			onFinish(callback) {
+				callbacks.onFinish.push(callback);
+			},
 		},
 		pendingTests,
 		callbacks,

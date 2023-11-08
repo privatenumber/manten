@@ -3,7 +3,7 @@ export type TestSuiteCallback<
 	T extends any[] = any[],
 	ReturnType = unknown,
 > = (
-	context: Context,
+	api: DescribeApi,
 	...args: T
 ) => ReturnType;
 
@@ -54,16 +54,20 @@ export type Test = (
 	timeout?: number,
 ) => Promise<void>;
 
-export type Describe = (
-	description: string,
-	callback: (context: Context) => void,
-) => Promise<void>;
-
-export type Context = {
+export type DescribeApi = {
 	describe: Describe;
 	test: Test;
 	runTestSuite: RunTestSuite;
 	onFinish: (callback: Callback) => void;
+};
+
+export type Describe = (
+	description: string,
+	callback: (api: DescribeApi) => void,
+) => Promise<void>;
+
+export type Context = {
+	api: DescribeApi;
 	pendingTests: PendingTests;
 	callbacks: {
 		onFinish: Callback[];
