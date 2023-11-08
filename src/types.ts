@@ -29,7 +29,7 @@ type ModuleDefaultExport <defaultExport> =
 	{ default: defaultExport }
 	| { default: { default: defaultExport } }; // ESM compiled to CJS
 
-type RunTestSuite = <
+export type RunTestSuite = <
 	Callback extends TestSuiteCallback
 >(
 	testSuite: TestSuite<Callback> | Promise<
@@ -40,10 +40,12 @@ type RunTestSuite = <
 
 export type Callback = () => void;
 
+export type onFinish = (callback: Callback) => void;
+
 export type onTestFailCallback = (error: Error) => void;
 export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
-	onTestFinish: (callback: Callback) => void;
+	onTestFinish: onFinish;
 };
 
 type TestFunction = (api: TestApi) => void;
@@ -58,7 +60,7 @@ export type DescribeApi = {
 	describe: Describe;
 	test: Test;
 	runTestSuite: RunTestSuite;
-	onFinish: (callback: Callback) => void;
+	onFinish: onFinish;
 };
 
 export type Describe = (
