@@ -36,7 +36,12 @@ export const createDescribe = (
 			process.exitCode = 1;
 		} finally {
 			for (const onFinish of context.callbacks.onFinish) {
-				await onFinish();
+				try {
+					await onFinish();
+				} catch (error) {
+					consoleError(error);
+					process.exitCode = 1;
+				}
 			}
 		}
 	}
