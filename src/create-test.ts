@@ -4,13 +4,13 @@ import type {
 	TestMeta,
 	onTestFailCallback,
 	Callback,
-	Context,
 } from './types.js';
 import {
 	consoleError,
 	logTestResult,
 	logReport,
 } from './logger.js';
+import type { Context } from './create-context.js';
 
 const throwOnTimeout = async (
 	duration: number,

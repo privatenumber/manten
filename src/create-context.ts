@@ -1,13 +1,43 @@
 import type {
-	Context,
+	Describe,
+	Test,
+	onFinish,
+	Callback,
 } from './types.js';
 import { createTest } from './create-test.js';
-import { createDescribe } from './create-describe.js'; // eslint-disable-line import/no-cycle
+// eslint-disable-next-line import/no-cycle
+import { createDescribe } from './create-describe.js';
+// eslint-disable-next-line import/no-cycle
 import {
-	describe as topLevelDescribe,
 	test as topLevelTest,
+	describe as topLevelDescribe,
+	runTestSuite as topLevelRunTestSuite,
 } from './top-level-context.js';
 import { createRunTestSuite } from './create-run-test-suite.js';
+import { consoleError } from './logger.js';
+import { waitAllPromises } from './utils/wait-all-promises.js';
+import type { RunTestSuite } from './create-run-test-suite.js';
+
+export type ContextCallback = (api: ContextApi) => void;
+
+export type ContextApi = {
+	describe: Describe;
+	test: Test;
+	runTestSuite: RunTestSuite;
+	onFinish: onFinish;
+};
+
+export type Context = {
+	api: ContextApi;
+	pendingTests: Promise<unknown>[];
+	callbacks: {
+		onFinish: Callback[];
+	};
+	run: (
+		callback: ContextCallback,
+		parentContext?: Context,
+	) => Promise<void>;
+};
 
 export const createContext = (
 	description?: string,
@@ -16,6 +46,35 @@ export const createContext = (
 		pendingTests: [],
 		callbacks: {
 			onFinish: [],
+		},
+		run: async (
+			callback: ContextCallback,
+			parentContext?: Context,
+		) => {
+			try {
+				const inProgress = (async () => {
+					await callback(context.api);
+					await waitAllPromises(context.pendingTests);
+				})();
+
+				if (parentContext) {
+					parentContext.pendingTests.push(inProgress);
+				}
+
+				await inProgress;
+			} catch (error) {
+				consoleError(error);
+				process.exitCode = 1;
+			} finally {
+				for (const onFinish of context.callbacks.onFinish) {
+					try {
+						await onFinish();
+					} catch (error) {
+						consoleError(error);
+						process.exitCode = 1;
+					}
+				}
+			}
 		},
 	} as unknown as Context;
 
@@ -36,7 +95,14 @@ export const createContext = (
 				)
 				: topLevelDescribe
 		),
-		runTestSuite: createRunTestSuite(context),
+		runTestSuite: (
+			description
+				? createRunTestSuite(
+					description,
+					context,
+				)
+				: topLevelRunTestSuite
+		),
 		onFinish: (callback) => {
 			context.callbacks.onFinish.push(callback);
 		},

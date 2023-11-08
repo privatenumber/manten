@@ -1,4 +1,4 @@
-import type { RunTestSuite } from './create-run-test-suite.js';
+import type { ContextCallback } from './create-context.js';
 
 export type Callback = () => void;
 
@@ -18,27 +18,10 @@ export type Test = (
 	timeout?: number,
 ) => Promise<void>;
 
-export type DescribeApi = {
-	describe: Describe;
-	test: Test;
-	runTestSuite: RunTestSuite;
-	onFinish: onFinish;
-};
-
 export type Describe = (
 	description: string,
-	callback: (api: DescribeApi) => void,
+	callback: ContextCallback,
 ) => Promise<void>;
-
-export type Context = {
-	api: DescribeApi;
-	pendingTests: PendingTests;
-	callbacks: {
-		onFinish: Callback[];
-	};
-};
-
-export type PendingTests = Promise<unknown>[];
 
 export type TestMeta = {
 	title: string;

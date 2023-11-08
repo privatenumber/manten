@@ -46,8 +46,12 @@ test('synchronous', async () => {
 });
 
 describe('asynchronous', ({ test }) => {
-	test('sequential', async () => {
+	test('sequential', async ({ onTestFail }) => {
 		const testProcess = await execaNode('./tests/specs/asynchronous-sequential', { env });
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
 
 		expect(testProcess.exitCode).toBe(0);
 		expectMatchInOrder(testProcess.stdout, [
@@ -55,16 +59,17 @@ describe('asynchronous', ({ test }) => {
 			'✔ Group › B\n',
 			'✔ Group › B\n',
 			'✔ Group - async › C\n',
-			'✔ Group - async › D\n',
 			'✔ Group - async › Test suite - Group › A\n',
 			'✔ Group - async › Test suite - Group › B\n',
 			'✔ Group - async › Test suite - Group Async › C\n',
 			'✔ Group - async › Test suite - Group Async › D\n',
 			/✔ Group - async › Test suite - E \(\d+ms\)\n/,
+			/✔ Group - async › Test suite 2 \(\d+ms\)\n/,
+			'✔ Group - async › D\n',
 			'✔ E\n',
 			'\n',
 			/\d+ms\n/,
-			'11 passed\n',
+			'12 passed\n',
 		]);
 		expect(testProcess.stdout).not.toMatch('failed');
 	});
@@ -97,10 +102,14 @@ describe('asynchronous', ({ test }) => {
 	});
 });
 
-test('hooks', async () => {
+test('hooks', async ({ onTestFail }) => {
 	const testProcess = await execaNode('./tests/specs/hooks', {
 		env,
 		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
 	});
 
 	expect(testProcess.exitCode).toBe(1);
@@ -111,8 +120,8 @@ test('hooks', async () => {
 		'test suite start',
 		'test suite describe start',
 		'test suite describe finish',
-		'describe finish',
 		'test suite finish',
+		'describe finish',
 	]);
 	expectMatchInOrder(testProcess.stderr, [
 		'Error: hello\n',

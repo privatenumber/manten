@@ -1,8 +1,8 @@
-import type {
-	DescribeApi,
-	Context,
-} from './types.js';
-import { createContext } from './create-context.js';
+import {
+	createContext,
+	type Context,
+	type ContextApi,
+} from './create-context.js';
 
 const defaultContext = createContext();
 
@@ -11,7 +11,7 @@ export type TestSuiteCallback<
 	T extends unknown[] = any[],
 	ReturnType = unknown,
 > = (
-	api: DescribeApi,
+	api: ContextApi,
 	...args: T
 ) => ReturnType;
 

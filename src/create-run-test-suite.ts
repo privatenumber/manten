@@ -1,9 +1,13 @@
-import type { Context } from './types.js';
 import type {
 	TestSuite,
 	TestSuiteCallback,
 	InferCallback,
 } from './test-suite.js';
+// eslint-disable-next-line import/no-cycle
+import {
+	createContext,
+	type Context,
+} from './create-context.js';
 
 type ModuleDefaultExport <defaultExport> =
 	{ default: defaultExport }
@@ -39,19 +43,17 @@ export type RunTestSuite = <
 ) => InferCallback<Callback>['returnType'];
 
 export const createRunTestSuite = (
-	context: Context,
+	prefix?: string,
+	parentContext?: Context,
 ): RunTestSuite => (
 	(
 		testSuite,
 		...args
 	) => {
-		const runningTestSuite = (async () => {
+		const context = createContext(prefix);
+		return context.run(async () => {
 			const maybeTestSuiteModule = unwrapModule(await testSuite);
 			return maybeTestSuiteModule.apply(context, args);
-		})();
-
-		context.pendingTests.push(runningTestSuite);
-
-		return runningTestSuite;
+		}, parentContext);
 	}
 );

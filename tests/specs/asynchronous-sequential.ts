@@ -21,11 +21,11 @@ import { test, describe } from '#manten';
 			await setTimeout(10);
 		});
 
+		await runTestSuite(import('./test-suite.js'), 'hello world');
+
 		await test('D', async () => {
 			await setTimeout(10);
 		});
-
-		runTestSuite(import('./test-suite.js'), 'hello world');
 	});
 
 	await test('E', async () => {
