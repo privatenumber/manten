@@ -1,25 +1,6 @@
 import { execaNode } from 'execa';
+import { expectMatchInOrder } from './utils/expect-match-in-order.js';
 import { test, expect, describe } from '#manten';
-
-const expectMatchInOrder = (
-	stdout: string,
-	expectedOrder: string[],
-) => {
-	let remainingStdout = stdout;
-	for (let i = 0; i < expectedOrder.length; i += 1) {
-		const previousElement = i > 0 ? expectedOrder[i - 1] : undefined;
-		const currentElement = expectedOrder[i];
-		const index = remainingStdout.indexOf(currentElement);
-		if (index === -1) {
-			console.log({
-				remainingStdout,
-				stdout,
-			});
-			throw new Error(`Expected ${JSON.stringify(currentElement)} ${previousElement ? `to be after ${JSON.stringify(previousElement)}` : ''}`);
-		}
-		remainingStdout = remainingStdout.slice(index + currentElement.length);
-	}
-};
 
 const env = { NODE_DISABLE_COLORS: '0' };
 
@@ -69,8 +50,22 @@ describe('asynchronous', ({ test }) => {
 		const testProcess = await execaNode('./tests/specs/asynchronous-sequential', { env });
 
 		expect(testProcess.exitCode).toBe(0);
-		expect(testProcess.stdout).toMatch(/✔ A\n✔ Group › B\n✔ Group › B\n✔ Group - async › C\n✔ Group - async › D\n✔ Group - async › Test suite - Group › A\n✔ Group - async › Test suite - Group › B\n✔ Group - async › Test suite - Group Async › C\n✔ Group - async › Test suite - Group Async › D\n✔ Group - async › Test suite - E \(\d+ms\)\n✔ E/);
-		expect(testProcess.stdout).toMatch('11 passed');
+		expectMatchInOrder(testProcess.stdout, [
+			'✔ A\n',
+			'✔ Group › B\n',
+			'✔ Group › B\n',
+			'✔ Group - async › C\n',
+			'✔ Group - async › D\n',
+			'✔ Group - async › Test suite - Group › A\n',
+			'✔ Group - async › Test suite - Group › B\n',
+			'✔ Group - async › Test suite - Group Async › C\n',
+			'✔ Group - async › Test suite - Group Async › D\n',
+			/✔ Group - async › Test suite - E \(\d+ms\)\n/,
+			'✔ E\n',
+			'\n',
+			/\d+ms\n/,
+			'11 passed\n',
+		]);
 		expect(testProcess.stdout).not.toMatch('failed');
 	});
 
