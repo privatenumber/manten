@@ -1,4 +1,4 @@
-import type { RunTestSuite } from './test-suite.js';
+import type { RunTestSuite } from './create-run-test-suite.js';
 
 export type Callback = () => void;
 
