@@ -8,7 +8,7 @@ const defaultContext = createContext();
 
 export type TestSuiteCallback<
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	T extends any[] = any[],
+	T extends unknown[] = any[],
 	ReturnType = unknown,
 > = (
 	api: DescribeApi,

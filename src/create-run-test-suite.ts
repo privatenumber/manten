@@ -9,17 +9,7 @@ type ModuleDefaultExport <defaultExport> =
 	{ default: defaultExport }
 	| { default: { default: defaultExport } }; // ESM compiled to CJS
 
-export type RunTestSuite = <
-	Callback extends TestSuiteCallback
->(
-	testSuite:
-		TestSuite<Callback>
-		| Promise<ModuleDefaultExport<TestSuite<Callback>>
-	>,
-	...args: InferCallback<Callback>['args']
-) => InferCallback<Callback>['returnType'];
-
-const unwrapM = <T extends TestSuite<TestSuiteCallback>>(
+const unwrapModule = <T extends TestSuite<TestSuiteCallback>>(
 	maybeModule: T | ModuleDefaultExport<T>,
 ): T => {
 	if ('default' in maybeModule) {
@@ -38,6 +28,16 @@ const unwrapM = <T extends TestSuite<TestSuiteCallback>>(
 	return maybeModule;
 };
 
+export type RunTestSuite = <
+	Callback extends TestSuiteCallback
+>(
+	testSuite:
+		TestSuite<Callback>
+		| Promise<ModuleDefaultExport<TestSuite<Callback>>
+	>,
+	...args: InferCallback<Callback>['args']
+) => InferCallback<Callback>['returnType'];
+
 export const createRunTestSuite = (
 	context: Context,
 ): RunTestSuite => (
@@ -46,7 +46,7 @@ export const createRunTestSuite = (
 		...args
 	) => {
 		const runningTestSuite = (async () => {
-			const maybeTestSuiteModule = unwrapM(await testSuite);
+			const maybeTestSuiteModule = unwrapModule(await testSuite);
 			return maybeTestSuiteModule.apply(context, args);
 		})();
 
