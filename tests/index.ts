@@ -64,7 +64,7 @@ describe('asynchronous', ({ test }) => {
 			'✔ Group - async › Test suite - Group Async › C\n',
 			'✔ Group - async › Test suite - Group Async › D\n',
 			/✔ Group - async › Test suite - E \(\d+ms\)\n/,
-			/✔ Group - async › Test suite 2 \(\d+ms\)\n/,
+			/✔ Group - async › Test suite 2 › Test \(\d+ms\)\n/,
 			'✔ Group - async › D\n',
 			'✔ E\n',
 			'\n',

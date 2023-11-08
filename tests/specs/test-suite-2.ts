@@ -1,8 +1,10 @@
 import { setTimeout } from '../utils/set-timeout.js';
-import { testSuite, expect } from '#manten';
+import { testSuite } from '#manten';
 
-export default testSuite(({ test }) => {
-	test('Test suite 2', async () => {
-		await setTimeout(70);
+export default testSuite(({ describe, test }) => {
+	describe('Test suite 2', ({ test }) => {
+		test('Test', async () => {
+			await setTimeout(70);
+		});
 	});
 });
