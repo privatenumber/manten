@@ -26,6 +26,9 @@ jobs:
           version: 9
           run_install: true
 
+      - name: Test
+        run: node test.cjs
+
       - name: Lint
         run: pnpm lint
 
