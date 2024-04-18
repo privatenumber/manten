@@ -26,15 +26,18 @@ jobs:
           version: 9
           run_install: true
 
-      - name: Lint
-        run: pnpm lint
-
       - name: Type check
         run: pnpm type-check
 
+      # ESLint needs to be able to resolve 'manten' to allow shadowing
+      - name: Build
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
+
       - name: Test
         run: |
-          pnpm build
           pnpm test:tsd
           pnpm test
           pnpm run --use-node-version=18.17.0 test
