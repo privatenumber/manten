@@ -5,9 +5,9 @@ import type {
 	Callback,
 } from './types.js';
 import { createTest } from './create-test.js';
-// eslint-disable-next-line import/no-cycle
+// eslint-disable-next-line import-x/no-cycle
 import { createDescribe } from './create-describe.js';
-// eslint-disable-next-line import/no-cycle
+// eslint-disable-next-line import-x/no-cycle
 import {
 	test as topLevelTest,
 	describe as topLevelDescribe,

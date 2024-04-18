@@ -1,8 +1,8 @@
 {
 	"compilerOptions": {
+		"module": "Node16",
 		"strict": true,
-		"isolatedModules": true,
 		"esModuleInterop": true,
-		"module": "Node16"
+		"isolatedModules": true
 	}
 }

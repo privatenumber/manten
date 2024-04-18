@@ -34,10 +34,10 @@ const runTest = async (testMeta: TestMeta) => {
 	};
 
 	const api: TestApi = {
-		onTestFail(callback) {
+		onTestFail: (callback) => {
 			callbacks.onTestFail.push(callback);
 		},
-		onTestFinish(callback) {
+		onTestFinish: (callback) => {
 			callbacks.onTestFinish.push(callback);
 		},
 	};

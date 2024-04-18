@@ -3,7 +3,7 @@ import type {
 	TestSuiteCallback,
 	InferCallback,
 } from './test-suite.js';
-// eslint-disable-next-line import/no-cycle
+// eslint-disable-next-line import-x/no-cycle
 import {
 	createContext,
 	type Context,

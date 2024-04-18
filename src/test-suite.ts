@@ -9,14 +9,14 @@ const defaultContext = createContext();
 export type TestSuiteCallback<
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	T extends unknown[] = any[],
-	ReturnType = unknown,
+	ReturnType = unknown
 > = (
 	api: ContextApi,
 	...args: T
 ) => ReturnType;
 
 export type InferCallback<
-	T extends TestSuiteCallback,
+	T extends TestSuiteCallback
 > = (
 	T extends TestSuiteCallback<infer Args, infer ReturnType>
 		? {
@@ -34,7 +34,7 @@ export type TestSuite<
 ) => InferCallback<Callback>['returnType'];
 
 export const testSuite = <
-	Callback extends TestSuiteCallback,
+	Callback extends TestSuiteCallback
 >(
 		callback: Callback,
 	): TestSuite<Callback> => (

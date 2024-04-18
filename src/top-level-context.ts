@@ -1,5 +1,5 @@
 import { createTest } from './create-test.js';
-import { createDescribe } from './create-describe.js'; // eslint-disable-line import/no-cycle
+import { createDescribe } from './create-describe.js'; // eslint-disable-line import-x/no-cycle
 import { createRunTestSuite } from './create-run-test-suite.js';
 
 export const test = createTest();
