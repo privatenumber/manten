@@ -32,9 +32,12 @@ const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 
 export const logTestResult = (testMeta: TestMeta) => {
 	const { title, error } = testMeta;
-	const logger = error ? consoleError : consoleLog;
-
-	logger(`${error ? failureIcon : successIcon} ${title + prettyDuration(testMeta)}`);
+	const message = `${title + prettyDuration(testMeta)}`;
+	if (error) {
+		consoleError(`${failureIcon} ${message}`);
+	} else {
+		consoleLog(`${successIcon} ${message}`);
+	}
 };
 
 export const logReport = (allTests: TestMeta[]) => {
