@@ -1,6 +1,5 @@
 import type {
 	Test,
-	TestApi,
 	TestMeta,
 	onTestFailCallback,
 	Callback,
@@ -12,27 +11,17 @@ import {
 } from './logger.js';
 import type { Context } from './create-context.js';
 import { timeLimitFunction } from './utils/timer.js';
+import { createHook } from './utils/hook.js';
 
-type Callbacks = {
-	onTestFail: onTestFailCallback[];
-	onTestFinish: Callback[];
-};
-
-const runTest = async (testMeta: TestMeta) => {
+const runTest = async (
+	testMeta: TestMeta,
+) => {
 	const { testFunction, timeout } = testMeta;
-	const callbacks: Callbacks = {
-		onTestFail: [],
-		onTestFinish: [],
-	};
 
-	const api: TestApi = {
-		onTestFail: (callback) => {
-			callbacks.onTestFail.push(callback);
-		},
-		onTestFinish: (callback) => {
-			callbacks.onTestFinish.push(callback);
-		},
-	};
+	const testFail = createHook<onTestFailCallback>((hookError) => {
+		consoleError('[onTestFail]', testMeta.title);
+		consoleError(hookError);
+	});
 
 	const handleError = async (error: Error) => {
 		// Remove "jest assertion error" matcherResult object
@@ -48,36 +37,31 @@ const runTest = async (testMeta: TestMeta) => {
 		consoleError(error);
 		process.exitCode = 1;
 
-		for (const onTestFail of callbacks.onTestFail) {
-			try {
-				await onTestFail(error as Error);
-			} catch (hookError) {
-				consoleError('[onTestFail]', testMeta.title);
-				consoleError(hookError);
-			}
-		}
+		await testFail.runHooks(error);
 
 		return error;
 	};
 
-	testMeta.startTime = Date.now();
+	const testFinish = createHook<Callback>(async (hookError) => {
+		const error = await handleError(hookError as Error);
+		if (!testMeta.error) {
+			testMeta.error = error;
+		}
+	});
 
+	testMeta.startTime = Date.now();
 	try {
-		await timeLimitFunction(testFunction(api), timeout);
+		await timeLimitFunction(
+			testFunction({
+				onTestFail: testFail.addHook,
+				onTestFinish: testFinish.addHook,
+			}),
+			timeout,
+		);
 	} catch (error) {
 		testMeta.error = await handleError(error as Error);
 	} finally {
-		for (const onTestFinish of callbacks.onTestFinish) {
-			try {
-				await onTestFinish();
-			} catch (_error) {
-				const error = await handleError(_error as Error);
-				if (!testMeta.error) {
-					testMeta.error = error;
-				}
-			}
-		}
-
+		await testFinish.runHooks();
 		testMeta.endTime = Date.now();
 		logTestResult(testMeta);
 	}
