@@ -10,7 +10,7 @@ export type TestApi = {
 	onTestFinish: onFinish;
 };
 
-type TestFunction = (api: TestApi) => void;
+type TestFunction = (api: TestApi) => void | Promise<void>;
 
 export type Test = (
 	title: string,

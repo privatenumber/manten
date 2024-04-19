@@ -11,15 +11,7 @@ import {
 	logReport,
 } from './logger.js';
 import type { Context } from './create-context.js';
-
-const throwOnTimeout = async (
-	duration: number,
-	controller: { timeoutId?: NodeJS.Timeout },
-) => new Promise((_resolve, reject) => {
-	controller.timeoutId = setTimeout(() => {
-		reject(new Error(`Timeout: ${duration}ms`));
-	}, duration);
-});
+import { setTimer } from './utils/set-timer.js';
 
 type Callbacks = {
 	onTestFail: onTestFailCallback[];
@@ -71,14 +63,14 @@ const runTest = async (testMeta: TestMeta) => {
 	testMeta.startTime = Date.now();
 	try {
 		if (timeout) {
-			const controller = { timeoutId: undefined };
+			const timer = setTimer(timeout);
 			try {
 				await Promise.race([
 					testFunction(api),
-					throwOnTimeout(timeout, controller),
+					timer,
 				]);
 			} finally {
-				clearTimeout(controller.timeoutId);
+				clearTimeout(timer.timeoutId);
 			}
 		} else {
 			await testFunction(api);

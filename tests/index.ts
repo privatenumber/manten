@@ -91,6 +91,7 @@ describe('asynchronous', ({ test }) => {
 		const startTime = Date.now();
 		const testProcess = await execaNode('./tests/specs/asynchronous-timeout', {
 			env,
+			all: true,
 			reject: false,
 		});
 

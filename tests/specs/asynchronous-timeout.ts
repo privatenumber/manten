@@ -16,7 +16,7 @@ import { test, describe } from '#manten';
 		test(
 			'on fail',
 			async () => {
-				throw new Error('1');
+				throw new Error('catch me');
 			},
 			5000,
 		);
