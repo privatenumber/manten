@@ -11,7 +11,7 @@ import {
 	logReport,
 } from './logger.js';
 import type { Context } from './create-context.js';
-import { setTimer } from './utils/set-timer.js';
+import { timeLimitFunction } from './utils/timer.js';
 
 type Callbacks = {
 	onTestFail: onTestFailCallback[];
@@ -61,20 +61,9 @@ const runTest = async (testMeta: TestMeta) => {
 	};
 
 	testMeta.startTime = Date.now();
+
 	try {
-		if (timeout) {
-			const timer = setTimer(timeout);
-			try {
-				await Promise.race([
-					testFunction(api),
-					timer,
-				]);
-			} finally {
-				clearTimeout(timer.timeoutId);
-			}
-		} else {
-			await testFunction(api);
-		}
+		await timeLimitFunction(testFunction(api), timeout);
 	} catch (error) {
 		testMeta.error = await handleError(error as Error);
 	} finally {
