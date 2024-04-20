@@ -4,7 +4,7 @@ export type Callback = () => void;
 
 export type onFinish = (callback: Callback) => void;
 
-export type onTestFailCallback = (error: Error) => void;
+export type onTestFailCallback = (error: unknown) => void;
 export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
@@ -29,5 +29,5 @@ export type TestMeta = {
 	timeout?: number;
 	startTime?: number;
 	endTime?: number;
-	error?: Error;
+	error?: unknown;
 };

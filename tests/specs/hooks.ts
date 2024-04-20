@@ -8,7 +8,7 @@ describe('describe', async ({ test, onFinish, runTestSuite }) => {
 	await test('hooks', ({ onTestFail, onTestFinish }) => {
 		console.log('test start');
 		onTestFail((error) => {
-			console.log('test error', error.message);
+			console.log('test error', error instanceof Error ? error.message : error);
 		});
 
 		onTestFinish(() => {

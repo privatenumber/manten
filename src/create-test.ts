@@ -23,7 +23,9 @@ const runTest = async (
 		consoleError(hookError);
 	});
 
-	const handleError = async (error: Error) => {
+	const handleError = async (
+		error: unknown,
+	) => {
 		// Remove "jest assertion error" matcherResult object
 		if (
 			error
@@ -43,7 +45,7 @@ const runTest = async (
 	};
 
 	const testFinish = createHook<Callback>(async (hookError) => {
-		const error = await handleError(hookError as Error);
+		const error = await handleError(hookError);
 		if (!testMeta.error) {
 			testMeta.error = error;
 		}
@@ -59,7 +61,7 @@ const runTest = async (
 			timeout,
 		);
 	} catch (error) {
-		testMeta.error = await handleError(error as Error);
+		testMeta.error = await handleError(error);
 	} finally {
 		await testFinish.runHooks();
 		testMeta.endTime = Date.now();
