@@ -31,8 +31,15 @@ const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 };
 
 export const logTestResult = (testMeta: TestMeta) => {
-	const { title, error } = testMeta;
-	const message = `${title + prettyDuration(testMeta)}`;
+	const {
+		title, error, attempt, retry,
+	} = testMeta;
+	let message = `${title + prettyDuration(testMeta)}`;
+
+	if (retry > 1) {
+		message += dim(` (${attempt}/${retry})`);
+	}
+
 	if (error) {
 		consoleError(`${failureIcon} ${message}`);
 	} else {
