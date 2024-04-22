@@ -15,7 +15,10 @@ type TestFunction = (api: TestApi) => void | Promise<void>;
 export type Test = (
 	title: string,
 	testFunction: TestFunction,
-	timeout?: number,
+	timeoutOrOptions?: number | {
+		timeout?: number;
+		retry?: number;
+	},
 ) => Promise<void>;
 
 export type Describe = (
@@ -27,6 +30,8 @@ export type TestMeta = {
 	title: string;
 	testFunction: TestFunction;
 	timeout?: number;
+	retry: number;
+	attempt?: number;
 	startTime?: number;
 	endTime?: number;
 	error?: unknown;

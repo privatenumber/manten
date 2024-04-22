@@ -12,6 +12,7 @@ import {
 import type { Context } from './create-context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
+import { retry } from './utils/retry.js';
 
 const runTest = async (
 	testMeta: TestMeta,
@@ -37,8 +38,6 @@ const runTest = async (
 		}
 
 		consoleError(error);
-		process.exitCode = 1;
-
 		await testFail.runHooks(error);
 
 		return error;
@@ -51,20 +50,33 @@ const runTest = async (
 		}
 	});
 
-	testMeta.startTime = Date.now();
 	try {
-		await timeLimitFunction(
-			testFunction({
-				onTestFail: testFail.addHook,
-				onTestFinish: testFinish.addHook,
-			}),
-			timeout,
+		await retry(
+			async (attempt) => {
+				testMeta.attempt = attempt;
+				testMeta.startTime = Date.now();
+				try {
+					await timeLimitFunction(
+						testFunction({
+							onTestFail: testFail.addHook,
+							onTestFinish: testFinish.addHook,
+						}),
+						timeout,
+					);
+				} catch (error) {
+					await handleError(error);
+					throw error;
+				} finally {
+					await testFinish.runHooks();
+					testMeta.endTime = Date.now();
+				}
+			},
+			testMeta.retry,
 		);
 	} catch (error) {
-		testMeta.error = await handleError(error);
+		testMeta.error = error;
+		process.exitCode = 1;
 	} finally {
-		await testFinish.runHooks();
-		testMeta.endTime = Date.now();
 		logTestResult(testMeta);
 	}
 };
@@ -82,17 +94,29 @@ export const createTest = (
 	async (
 		title,
 		testFunction,
-		timeout,
+		timeoutOrOptions,
 	) => {
 		if (prefix) {
 			title = `${prefix} ${title}`;
 		}
 
-		const testMeta = {
+		const testMeta: TestMeta = {
 			title,
 			testFunction,
-			timeout,
+			retry: 1,
 		};
+
+		if (timeoutOrOptions !== undefined) {
+			if (typeof timeoutOrOptions === 'number') {
+				testMeta.timeout = timeoutOrOptions;
+			} else {
+				testMeta.timeout = timeoutOrOptions?.timeout;
+				if (timeoutOrOptions?.retry) {
+					testMeta.retry = timeoutOrOptions?.retry;
+				}
+			}
+		}
+
 		allTests.push(testMeta);
 
 		const testRunning = runTest(testMeta);

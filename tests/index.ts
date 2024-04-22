@@ -106,6 +106,7 @@ describe('asynchronous', ({ test }) => {
 test('hooks', async ({ onTestFail }) => {
 	const testProcess = await execaNode('./tests/specs/hooks', {
 		env,
+		all: true,
 		reject: false,
 	});
 
@@ -134,4 +135,19 @@ test('hooks', async ({ onTestFail }) => {
 		'[onTestFail] describe › failing hooks\n',
 		'✖ describe › failing hooks',
 	]);
+});
+
+test('retry', async ({ onTestFail }) => {
+	const testProcess = await execaNode('./tests/specs/retry', {
+		env,
+		all: true,
+		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
+	});
+
+	expect(testProcess.all).toMatch('✔ retry › should pass (3/5)');
+	expect(testProcess.all).toMatch('✖ retry › should fail (5/5)');
 });
