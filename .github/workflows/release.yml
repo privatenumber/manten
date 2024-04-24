@@ -48,7 +48,7 @@ jobs:
             | .repository = env.GITHUB_REPOSITORY
             | .release.branches = [
                 "master",
-                { name: "develop", prerelease: "rc" }
+                { name: "develop", prerelease: "rc", channel: "latest" }
               ]
             ' package.json > _package.json
           mv _package.json package.json
