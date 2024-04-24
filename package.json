@@ -43,7 +43,7 @@
 		"build": "pkgroll --minify",
 		"test": "tsx tests",
 		"test:tsd": "tsd --files ./tests/index.test-d.ts",
-		"lint": "lint --cache .",
+		"lint": "lintroll --cache .",
 		"type-check": "tsc --noEmit",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
@@ -52,13 +52,12 @@
 		"expect": "^29.6.4"
 	},
 	"devDependencies": {
-		"@pvtnbr/eslint-config": "^1.3.0",
 		"@types/node": "^20.5.7",
 		"clean-pkg-json": "^1.2.0",
 		"cleye": "^1.3.2",
-		"eslint": "^8.57.0",
 		"execa": "^8.0.1",
 		"kolorist": "^1.8.0",
+		"lintroll": "^1.4.1",
 		"pkgroll": "^2.0.2",
 		"pretty-ms": "^8.0.0",
 		"tsd": "^0.31.0",
