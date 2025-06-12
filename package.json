@@ -63,5 +63,6 @@
 		"tsd": "^0.31.0",
 		"tsx": "^4.7.2",
 		"typescript": "^5.4.5"
-	}
+	},
+	"packageManager": "pnpm@10.11.0"
 }
