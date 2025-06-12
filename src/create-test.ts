@@ -87,6 +87,8 @@ process.on('exit', () => {
 	logReport(allTests);
 });
 
+const onlyRunTests = process.env.TESTONLY;
+
 export const createTest = (
 	prefix?: string,
 	parentContext?: Context,
@@ -98,6 +100,10 @@ export const createTest = (
 	) => {
 		if (prefix) {
 			title = `${prefix} ${title}`;
+		}
+
+		if (onlyRunTests && !title.includes(onlyRunTests)) {
+			return;
 		}
 
 		const testMeta: TestMeta = {
