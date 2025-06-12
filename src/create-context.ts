@@ -13,10 +13,9 @@ import {
 	describe as topLevelDescribe,
 	runTestSuite as topLevelRunTestSuite,
 } from './top-level-context.js';
-import { createRunTestSuite } from './create-run-test-suite.js';
+import { createRunTestSuite, type RunTestSuite } from './create-run-test-suite.js';
 import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
-import type { RunTestSuite } from './create-run-test-suite.js';
 
 export type ContextCallback = (api: ContextApi) => void;
 

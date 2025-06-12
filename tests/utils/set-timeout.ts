@@ -2,5 +2,5 @@
 export const setTimeout = (
 	duration: number,
 ) => new Promise((resolve) => {
-	global.setTimeout(resolve, duration);
+	globalThis.setTimeout(resolve, duration);
 });

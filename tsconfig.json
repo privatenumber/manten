@@ -3,6 +3,6 @@
 		"module": "Node16",
 		"strict": true,
 		"esModuleInterop": true,
-		"isolatedModules": true
-	}
+		"isolatedModules": true,
+	},
 }

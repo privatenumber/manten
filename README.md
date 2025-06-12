@@ -327,7 +327,7 @@ import { testSuite } from 'manten'
 
 const runTest = testSuite((
     { test },
-    node: { path: string; version: string }
+    node
 ) => {
     test(
         `Works in Node.js ${node.version}`,
