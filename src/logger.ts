@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import {
 	green, red, yellow, dim,
 } from 'kolorist';
@@ -5,6 +6,7 @@ import prettyMs from 'pretty-ms';
 import type { TestMeta } from './types.js';
 
 const newline = '\n';
+const indent = '    ';
 
 export const {
 	log: consoleLog,
@@ -30,21 +32,37 @@ const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	);
 };
 
-export const logTestResult = (testMeta: TestMeta) => {
-	const {
-		title, error, attempt, retry,
-	} = testMeta;
+const indentMultiline = (
+	string: string,
+) => string.replaceAll(/^/gm, indent);
+
+const getTestTitle = (testMeta: TestMeta) => {
+	const { title, attempt, retry } = testMeta;
 	let message = `${title + prettyDuration(testMeta)}`;
 
 	if (retry > 1) {
 		message += dim(` (${attempt}/${retry})`);
 	}
 
-	if (error) {
-		consoleError(`${failureIcon} ${message}`);
-	} else {
-		consoleLog(`${successIcon} ${message}`);
+	return message;
+};
+
+export const logTestFail = (
+	testMeta: TestMeta,
+	error: unknown,
+	stage? : 'onTestFail' | 'onTestFinish',
+) => {
+	let title = `${failureIcon} ${getTestTitle(testMeta)}`;
+	if (stage) {
+		title += ` [${stage}]`;
 	}
+
+	consoleError(title);
+	consoleError(`${indentMultiline(inspect(error))}\n`);
+};
+
+export const logTestSuccess = (testMeta: TestMeta) => {
+	consoleLog(`${successIcon} ${getTestTitle(testMeta)}`);
 };
 
 export const logReport = (allTests: TestMeta[]) => {

@@ -5,8 +5,8 @@ import type {
 	Callback,
 } from './types.js';
 import {
-	consoleError,
-	logTestResult,
+	logTestSuccess,
+	logTestFail,
 	logReport,
 } from './logger.js';
 import type { Context } from './create-context.js';
@@ -14,40 +14,37 @@ import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
 
+// Remove "jest assertion error" matcherResult object
+const patchJestAssertionError = (error: unknown) => {
+	if (
+		error
+		&& typeof error === 'object'
+		&& 'matcherResult' in error
+		&& error.constructor.name === 'JestAssertionError'
+	) {
+		delete error.matcherResult;
+	}
+	return error;
+};
+
 const runTest = async (
 	testMeta: TestMeta,
 ) => {
 	const { testFunction, timeout } = testMeta;
 
 	const testFail = createHook<onTestFailCallback>((hookError) => {
-		consoleError('[onTestFail]', testMeta.title);
-		consoleError(hookError);
+		logTestFail(testMeta, hookError, 'onTestFail');
 	});
 
 	const handleError = async (
 		error: unknown,
 	) => {
-		// Remove "jest assertion error" matcherResult object
-		if (
-			error
-			&& typeof error === 'object'
-			&& 'matcherResult' in error
-			&& error.constructor.name === 'JestAssertionError'
-		) {
-			delete error.matcherResult;
-		}
-
-		consoleError(error);
 		await testFail.runHooks(error);
-
-		return error;
 	};
 
-	const testFinish = createHook<Callback>(async (hookError) => {
-		const error = await handleError(hookError);
-		if (!testMeta.error) {
-			testMeta.error = error;
-		}
+	// Why run an error hook on finish?
+	const testFinish = createHook<Callback>(async (error) => {
+		logTestFail(testMeta, patchJestAssertionError(error), 'onTestFinish');
 	});
 
 	try {
@@ -64,20 +61,21 @@ const runTest = async (
 						timeout,
 					);
 				} catch (error) {
+					// Probably can remove error property now
+					logTestFail(testMeta, patchJestAssertionError(error));
 					await handleError(error);
 					throw error;
 				} finally {
 					await testFinish.runHooks();
 					testMeta.endTime = Date.now();
 				}
+				logTestSuccess(testMeta);
 			},
 			testMeta.retry,
 		);
 	} catch (error) {
 		testMeta.error = error;
 		process.exitCode = 1;
-	} finally {
-		logTestResult(testMeta);
 	}
 };
 

@@ -19,12 +19,12 @@ describe('describe', async ({ test, onFinish, runTestSuite }) => {
 	});
 
 	await test('failing hooks', ({ onTestFail, onTestFinish }) => {
-		onTestFail((error) => {
-			throw error;
+		onTestFail(() => {
+			throw new Error('onTestFail');
 		});
 
 		onTestFinish(() => {
-			throw new Error('goodbye');
+			throw new Error('onTestFinish');
 		});
 
 		throw new Error('hello');

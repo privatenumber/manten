@@ -126,14 +126,17 @@ test('hooks', async ({ onTestFail }) => {
 		'describe finish',
 	]);
 	expectMatchInOrder(testProcess.stderr, [
-		'Error: hello\n',
 		'✖ describe › hooks\n',
-		'Error: hello\n',
-		'[onTestFail] describe › failing hooks\n',
-		'Error: hello\n',
-		'Error: goodbye\n',
-		'[onTestFail] describe › failing hooks\n',
-		'✖ describe › failing hooks',
+		'    Error: hello\n',
+
+		'✖ describe › failing hooks\n',
+		'    Error: hello\n',
+
+		'✖ describe › failing hooks [onTestFail]\n',
+		'    Error: onTestFail\n',
+
+		'✖ describe › failing hooks [onTestFinish]\n',
+		'    Error: onTestFinish\n',
 	]);
 });
 
@@ -148,6 +151,12 @@ test('retry', async ({ onTestFail }) => {
 		console.log(testProcess);
 	});
 
-	expect(testProcess.all).toMatch('✔ retry › should pass (3/5)');
-	expect(testProcess.all).toMatch('✖ retry › should fail (5/5)');
+	expect(testProcess.all).toMatch('✖ retry › should fail 5 times (5/5)');
+
+	expect(testProcess.all).toMatch('✖ retry › should pass on 3rd try (2/5)');
+	expect(testProcess.all).toMatch('✔ retry › should pass on 3rd try (3/5)');
+	expect(testProcess.all).not.toMatch('retry › should pass on 3rd try (4/5)');
+
+	expect(testProcess.stdout).toMatch('1 passed');
+	expect(testProcess.stdout).toMatch('1 failed');
 });

@@ -1,6 +1,6 @@
 import type { ContextCallback } from './create-context.js';
 
-export type Callback = () => void;
+export type Callback = () => void | Promise<void>;
 
 export type onFinish = (callback: Callback) => void;
 
