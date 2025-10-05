@@ -9,8 +9,7 @@ import {
 	type Context,
 } from './create-context.js';
 
-type ModuleDefaultExport <defaultExport> =
-	{ default: defaultExport }
+type ModuleDefaultExport <defaultExport> = { default: defaultExport }
 	| { default: { default: defaultExport } }; // ESM compiled to CJS
 
 const unwrapModule = <T extends TestSuite<TestSuiteCallback>>(
@@ -33,12 +32,12 @@ const unwrapModule = <T extends TestSuite<TestSuiteCallback>>(
 };
 
 export type RunTestSuite = <
-	Callback extends TestSuiteCallback
+	Callback extends TestSuiteCallback,
 >(
 	testSuite:
 		TestSuite<Callback>
 		| Promise<ModuleDefaultExport<TestSuite<Callback>>
-	>,
+		>,
 	...args: InferCallback<Callback>['args']
 ) => InferCallback<Callback>['returnType'];
 
