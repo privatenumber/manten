@@ -5,14 +5,17 @@
 
 <h1 align="center">満点 (manten)</h1>
 
-Lightweight testing library for Node.js
+**A tiny, async-first testing library for Node.js**
+
+Manten is designed for speed with minimal overhead—just `2.3 kB` and zero dependencies beyond Jest's assertion library. Tests run immediately as plain JavaScript with native `async`/`await` flow control, giving you full control over concurrency without the complexity of a test runner.
 
 ### Features
-- Minimal API: `test`, `describe`, `testSuite`
-- Async first design
-- Flow control via `async`/`await`
-- Strongly typed
-- Tiny! `2.3 kB`
+- **Tiny**: `2.3 kB` minified
+- **Fast**: No test discovery overhead, tests run as plain Node.js scripts
+- **Async-first**: Native `async`/`await` for sequential or concurrent execution
+- **Zero config**: No test runner, no transforms—just Node.js
+- **Full control**: Manage async flow exactly how you want
+- **Strongly typed**: Full TypeScript support
 
 ## Install
 ```sh
@@ -20,40 +23,34 @@ npm i -D manten
 ```
 
 ## Quick start
-- All test files are plain JavaScript files
-- `test()`/`describe()` run on creation
-- Use `async`/`await`/Promise API for async flow control
-- Nest `describe()` groups by inheriting a new the `describe` function
-- [`expect`](https://www.npmjs.com/package/expect) assertion library is re-exported
-- When a test fails, the Node.js process will exit with code `1`
 
 ```ts
 // tests/test.mjs
+import { test, expect } from 'manten'
 
-import { describe, expect } from 'manten'
+// Tests run immediately—no collection phase
+test('adds numbers', () => {
+    expect(1 + 1).toBe(2)
+})
 
-describe('My test suite', ({ test, describe }) => {
-    test('My test', () => {
-        expect(true).toBe(true)
-    })
-
-    describe('Nested groups', ({ test }) => {
-        // ...
-    })
+// Control async flow with await
+await test('async test', async () => {
+    const result = await fetchData()
+    expect(result).toBeDefined()
 })
 ```
 
-Run the test file with Node.js:
+Run directly with Node.js:
 ```sh
 node tests/test.mjs
 ```
 
+**That's it.** No configuration, no test runner, no setup. Just write tests and run them.
+
 ## Usage
 
 ### Writing tests
-Create and run a test with the `test(name, testFunction)` function. The first argument is the test name, and the second is the test function. Optionally, you can pass in a timeout in milliseconds as the third argument for asynchronous tests.
-
-The test runs immediately after the test function is invoked and the results are logged to stdout.
+Tests execute immediately when `test()` is called—there's no collection phase or scheduling overhead.
 
 ```ts
 import { test, expect } from 'manten'
@@ -62,18 +59,13 @@ test('Test A', () => {
     expect(somethingSync()).toBe(1)
 })
 
-// Runs after Test A completes
 test('Test B', () => {
     expect(somethingSync()).toBe(2)
 })
 ```
 
 ### Assertions
-Jest's [`expect`](https://www.npmjs.com/package/expect) is exported as the default assertion library. Read the docs [here](https://jestjs.io/docs/expect). 
-
-```ts
-import { expect } from 'manten'
-```
+Jest's [`expect`](https://www.npmjs.com/package/expect) is exported as the default assertion library. Read the docs [here](https://jestjs.io/docs/expect).
 
 Feel free to use a different assertion library, such as [Node.js Assert](https://nodejs.org/api/assert.html) or [Chai](https://www.chaijs.com/).
 
@@ -105,25 +97,16 @@ describe('Group description', ({ test, describe }) => {
         // ...
     })
 
-    // ...
-
-    describe('Nested group', ({ test }) => {
+    describe('Nested group', () => {
         // ...
     })
 })
 ```
 
 ### Asynchronous tests
-Test async code by passing in an `async` function to `test()`.
+Manten is built for async. You control execution flow with native `async`/`await`—no configuration needed.
 
-Control the flow of your tests via native `async`/`await` syntax or [Promise API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
-
-
-#### Sequential flow
-Run asynchronous tests sequentially by `await`ing on each test.
-
-Node.js v14.8 and up supports [top-level await](https://v8.dev/features/top-level-await). Alternatively, wrap the whole block in an async [IIFE](https://developer.mozilla.org/en-US/docs/Glossary/IIFE).
-
+#### Sequential: await each test
 ```ts
 await test('Test A', async () => {
     await somethingAsync()
@@ -135,22 +118,22 @@ await test('Test B', async () => {
 })
 ```
 
-#### Concurrent flow
-Run tests concurrently by running them without `await`.
-
+#### Concurrent: omit await
 ```ts
 test('Test A', async () => {
     await somethingAsync()
 })
 
-// Runs while "Test A" is running
+// Runs immediately while Test A is still running
 test('Test B', async () => {
     await somethingAsync()
 })
 ```
 
+**This is the key design principle:** native JavaScript async control with zero overhead. No worker pools, no queue management—just the primitives you already know.
+
 #### Timeouts
-Pass in the max time duration a test can run for as the third argument to `test()`.
+Pass in the max time duration (in milliseconds) a test can run for as the third argument to `test()`.
 
 ```ts
 test('should finish within 1s', async () => {
@@ -158,28 +141,42 @@ test('should finish within 1s', async () => {
 }, 1000)
 ```
 
-### Grouping async tests
-All descendant tests in a `describe()` are collected so `await`ing on the `describe()` will wait for all async tests inside to complete, even if they are not individually `await`ed.
+#### Retries
+Retry flaky tests automatically using the options object:
 
-To run tests inside `describe()` sequentially, pass in an async function to `describe()` and use `await` on each test.
+```ts
+test('flaky API call', async () => {
+    await unreliableAPI()
+}, {
+    timeout: 5000,
+    retry: 3 // Will retry up to 3 times on failure
+})
+```
+
+When a test passes after retries, the output shows which attempt succeeded (e.g., `✔ test (2/3)`).
+
+### Grouping async tests
+Manten tracks all tests in a `describe()` block, so awaiting the group waits for all child tests—even concurrent ones.
 
 ```ts
 await describe('Group A', ({ test }) => {
-    test('Test A1', () => {
-        // ...
+    test('Test A1', async () => {
+        await something()
     })
 
-    // Test A2 will run concurrently with A1
-    test('Test A2', () => {
-        // ...
+    // Test A2 runs concurrently with A1
+    test('Test A2', async () => {
+        await somethingElse()
     })
 })
 
-// Will wait for all tests in Group A to finish
+// Only runs after BOTH tests complete
 test('Test B', () => {
     // ...
 })
 ```
+
+This gives you fine-grained control: run tests concurrently within a group, then await the group to ensure completion before the next step.
 
 <!-- 
 ### Concurrency limiting
@@ -213,13 +210,13 @@ export default testSuite((
     { describe, test },
 
     // Can have parameters to accept
-    value: number
+    _value: number
 ) => {
     test('Test A', async () => {
         // ...
     })
 
-    describe('Group B', ({ test }) => {
+    describe('Group B', () => {
         // ...
     })
 })
@@ -337,28 +334,66 @@ const runTest = testSuite((
 )
 ```
 
+### Running multiple test files
+Since there's no test runner, run multiple files using standard shell patterns:
+
+```sh
+# Run all test files
+node tests/*.mjs
+
+# Using tsx for TypeScript
+npx tsx tests/*.ts
+
+# Parallel execution with GNU parallel or xargs
+find tests -name "*.test.ts" | xargs -P 4 -n 1 npx tsx
+```
+
+You have full control over concurrency and execution order.
+
+### Understanding test output
+Manten outputs test results in real-time as they complete:
+
+```
+✔ Test A (45ms)
+✔ Group › Test B
+✖ Failed test
+
+134ms
+2 passed
+1 failed
+```
+
+- `✔` = Passed test
+- `✖` = Failed test
+- `•` = Incomplete test (if process exits before test finishes)
+- Time shown for tests taking >50ms
+- Retry attempts shown as `(2/5)` when using `retry` option
+- Test errors logged to stderr, results to stdout
+
+The final report is generated on `process.on('exit')`, so if the process crashes or is killed (<kbd>Ctrl+C</kbd>), any unfinished tests will be shown with the `•` symbol.
+
 ## API
 
-### test(name, testFunction, timeout?)
+### test(name, testFunction, timeoutOrOptions?)
 
 name: `string`
 
-testFunction: `() => void`
+testFunction: `(api: { onTestFail, onTestFinish }) => void | Promise<void>`
 
-timeout: `number`
+timeoutOrOptions: `number | { timeout?: number, retry?: number }`
 
 Return value: `Promise<void>`
 
-Create and run a test.
+Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings.
 
 ### describe(description, testGroupFunction)
 description: `string`
 
-testGroupFunction: `({ test, describe, runTestSuite }) => void`
+testGroupFunction: `(api: { test, describe, runTestSuite, onFinish }) => void | Promise<void>`
 
 Return value: `Promise<void>`
 
-Create a group of tests.
+Create a group of tests. The group tracks all child tests and waits for them to complete.
 
 ### testSuite(testSuiteFunction, ...testSuiteArguments)
 testSuiteFunction: `({ test, describe, runTestSuite }) => any`
@@ -384,14 +419,111 @@ It's a Hanamaru symbol:
 — https://en.wikipedia.org/wiki/O_mark
 
 ### Why is there no test runner?
-Currently, _Manten_ does not come with a test runner because the tradeoffs are not worh it.
+No test runner means **zero overhead**. Your tests are plain Node.js scripts—no file discovery, no spawning processes, no abstraction layers slowing you down.
 
-The primary benefit of the test runner is that it can detect and run all test files, and maybe watch for file changes to re-run tests.
+**Why this matters:**
+- **Faster startup**: No scanning directories or pattern matching
+- **Full Node.js control**: Use any loaders, flags, or tools (tsx, Babel, etc.)
+- **No false positives**: You explicitly run what you want
+- **True async**: You manage concurrency exactly how you need it
 
-The drawbacks are:
-- Re-invented Node.js binary API. In today's Node.js ecosystem, it's common to see a build step for TypeScript, Babel, etc. By creating a new binary to run JavaScript, we have to re-invent APIs to allow for things like transformations.
-- Test files are implicitly declared. Instead of explicitly specifying test files, the test runner traverses the project to find tests that match a pattern. This search adds an overhead and can incorrectly match files that are not tests (eg. complex test fixtures in projects that are related to testing).
-- Tests in _Manten_ are async first and can run concurrently. While this might be fine in some cases, it can also be too much and may require guidance in how many tests can run in parallel.
+Test runners add complexity and overhead. Manten gets out of your way and lets Node.js do what it does best.
+
+## Gotchas & Important Notes
+
+### Using await (optional)
+You can `await` tests to control execution order (sequential vs concurrent).
+
+You can also use [top-level `await`](https://v8.dev/features/top-level-await) (Node.js 14.8+) or wrap in an async IIFE if needed.
+
+### Tests run immediately
+Unlike other frameworks, tests execute **as soon as** `test()` is called—not after a collection phase. This means:
+
+```ts
+console.log('before test')
+test('my test', () => {
+    console.log('during test')
+})
+console.log('after test call')
+
+// Output order:
+// before test
+// during test          ← Executes immediately!
+// ✔ my test
+// after test call
+```
+
+This is intentional for zero overhead, but may surprise users coming from Jest/Mocha.
+
+### Process exit code
+When tests fail, Manten sets `process.exitCode = 1` but doesn't call `process.exit()`. This allows all tests to complete and the final report to be generated on the `process.on('exit')` event.
+
+### Concurrent tests and shared state
+When running tests concurrently (without `await`), be careful with shared state:
+
+```ts
+// ❌ Bad: Shared state causes race conditions
+let sharedCounter = 0
+test('A', async () => {
+    sharedCounter += 1
+    await delay(10)
+    expect(sharedCounter).toBe(1) // May fail!
+})
+test('B', async () => {
+    sharedCounter += 1
+    await delay(10)
+    expect(sharedCounter).toBe(1) // May fail!
+})
+
+// ✅ Good: Each test has its own state
+test('A', async () => {
+    const counter = 1
+    await delay(10)
+    expect(counter).toBe(1)
+})
+test('B', async () => {
+    const counter = 1
+    await delay(10)
+    expect(counter).toBe(1)
+})
+```
+
+This is why Manten has no `beforeEach`—it encourages isolation.
+
+### Running TypeScript tests
+Manten has no built-in TypeScript support. Use Node.js loaders like [tsx](https://github.com/privatenumber/tsx):
+
+```sh
+npx tsx tests/test.ts
+# or
+node --loader tsx tests/test.ts
+```
+
+This is by design—you get full control over your build tooling.
+
+### No .only, .skip, or .todo
+Manten doesn't have `.only()` or `.skip()` modifiers. Instead, use the `TESTONLY` environment variable or JavaScript:
+
+**Using `TESTONLY` to run specific tests:**
+
+```sh
+# Run only tests matching "authentication"
+TESTONLY=authentication node tests/test.mjs
+
+# Works with partial matches and nested groups
+TESTONLY="API › POST" npm test
+```
+
+The `TESTONLY` env var performs substring matching against full test titles (including group prefixes), so it will run any test whose title contains the specified string.
+
+**Using JavaScript for conditional tests:**
+
+```ts
+// Skip tests by commenting them out
+// test('skipped test', () => { ... })
+```
+
+This keeps the API minimal while giving you powerful filtering.
 
 ### Why no beforeAll/beforeEach?
 `beforeAll`/`beforeEach` hooks usually deal with managing shared environmental variables.
