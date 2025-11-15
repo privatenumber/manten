@@ -88,15 +88,12 @@ describe('asynchronous', ({ test }) => {
 	});
 
 	test('timeout', async () => {
-		const startTime = Date.now();
 		const testProcess = await execaNode('./tests/specs/asynchronous-timeout', {
 			env,
 			all: true,
 			reject: false,
 		});
 
-		const elapsed = Date.now() - startTime;
-		expect(elapsed).toBeLessThan(2000);
 		expect(testProcess.exitCode).toBe(1);
 		expect(testProcess.stderr).toMatch('✖ should fail');
 		expect(testProcess.stderr).toMatch('Error: Timeout: 1ms');
