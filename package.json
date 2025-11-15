@@ -43,8 +43,8 @@
 	"scripts": {
 		"build": "pkgroll --minify",
 		"test": "tsx tests",
-		"lint": "lintroll --cache .",
-		"type-check": "tsc --noEmit",
+		"lint": "lintroll --cache",
+		"type-check": "tsc",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
