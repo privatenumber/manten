@@ -79,9 +79,9 @@ describe('asynchronous', ({ test }) => {
 
 		expect(testProcess.exitCode).toBe(0);
 		expectMatchInOrder(testProcess.stdout, [
-			'✔ B',
-			'✔ C',
-			'✔ A',
+			/✔ B \(\d+ms\)/,
+			/✔ C \(\d+ms\)/,
+			/✔ A \(\d+ms\)/,
 		]);
 		expect(testProcess.stdout).toMatch('3 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
@@ -156,4 +156,178 @@ test('retry', async ({ onTestFail }) => {
 
 	expect(testProcess.stdout).toMatch('1 passed');
 	expect(testProcess.stdout).toMatch('1 failed');
+});
+
+describe('TESTONLY filtering', ({ test }) => {
+	test('filters by substring match', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: 'Test A',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).toMatch('✔ Test A');
+		expect(testProcess.stdout).not.toMatch('✔ Test B');
+		expect(testProcess.stdout).not.toMatch('✔ Group › Test C');
+		expect(testProcess.stdout).toMatch('1 passed');
+	});
+
+	test('filters with describe prefix', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: 'Group',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).not.toMatch('✔ Test A');
+		expect(testProcess.stdout).not.toMatch('✔ Test B');
+		expect(testProcess.stdout).toMatch('✔ Group › Test C');
+		expect(testProcess.stdout).toMatch('✔ Group › Another Test');
+		expect(testProcess.stdout).toMatch('2 passed');
+	});
+
+	test('filters with partial match', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: 'Another',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).not.toMatch('✔ Test A');
+		expect(testProcess.stdout).not.toMatch('✔ Test B');
+		expect(testProcess.stdout).not.toMatch('✔ Group › Test C');
+		expect(testProcess.stdout).toMatch('✔ Group › Another Test');
+		expect(testProcess.stdout).toMatch('1 passed');
+	});
+
+	test('filters with special characters', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: '[chars]',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).toMatch('✔ Special [chars]');
+		expect(testProcess.stdout).not.toMatch('✔ Test A');
+		expect(testProcess.stdout).toMatch('1 passed');
+	});
+
+	test('no matches skips all tests', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: 'NonExistentTest',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).toBe('');
+		expect(testProcess.stdout).not.toMatch('✔');
+		expect(testProcess.stdout).not.toMatch('passed');
+	});
+
+	test('empty string runs all tests', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+			env: {
+				...env,
+				TESTONLY: '',
+			},
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).toMatch('5 passed');
+	});
+});
+
+describe('unfinished test detection', ({ test }) => {
+	test('shows pending symbol for incomplete tests', async ({ onTestFail }) => {
+		const testProcess = await execaNode('./tests/specs/unfinished-test.ts', {
+			env,
+			all: true,
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(1);
+		expect(testProcess.stdout).toMatch('✔ completed test');
+		expect(testProcess.stdout).toMatch('• unfinished test');
+		expect(testProcess.stdout).toMatch('1 passed');
+		expect(testProcess.stdout).toMatch('1 pending');
+	});
+});
+
+test('retry with timeout interaction', async ({ onTestFail }) => {
+	const testProcess = await execaNode('./tests/specs/retry-with-timeout', {
+		env,
+		all: true,
+		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
+	});
+
+	expect(testProcess.exitCode).toBe(0);
+	expect(testProcess.all).toMatch('Timeout: 50ms');
+	expect(testProcess.all).toMatch('(3/3)');
+	expect(testProcess.stdout).toMatch('1 passed');
+});
+
+test('deep context nesting', async ({ onTestFail }) => {
+	const testProcess = await execaNode('./tests/specs/deep-nesting', {
+		env,
+		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
+	});
+
+	expect(testProcess.exitCode).toBe(0);
+	expect(testProcess.stdout).toMatch('✔ Level 1 › Test at level 1');
+	expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Test at level 2');
+	expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Level 3 › Test at level 3');
+	expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Level 3 › Level 4 › Test at level 4');
+	expect(testProcess.stdout).toMatch('4 passed');
 });
