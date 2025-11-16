@@ -113,11 +113,8 @@ describe('asynchronous', ({ test }) => {
 	test('sequential', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
+				import { setTimeout } from 'node:timers/promises';
 				import { test, describe, testSuite } from 'manten';
-
-				const setTimeout = (duration) => new Promise((resolve) => {
-					globalThis.setTimeout(resolve, duration);
-				});
 
 				const testSuite1 = testSuite(({ describe, test, runTestSuite }, value) => {
 					describe('Test suite - Group', ({ test }) => {
@@ -183,11 +180,8 @@ describe('asynchronous', ({ test }) => {
 				})();
 			`,
 			'test-suite-2.mjs': `
+				import { setTimeout } from 'node:timers/promises';
 				import { testSuite } from 'manten';
-
-				const setTimeout = (duration) => new Promise((resolve) => {
-					globalThis.setTimeout(resolve, duration);
-				});
 
 				export default testSuite(({ describe }) => {
 					describe('Test suite 2', ({ test }) => {
@@ -230,11 +224,8 @@ describe('asynchronous', ({ test }) => {
 	test('concurrent', async () => {
 		await using fixture = await createFixture({
 			'test.ts': `
+				import { setTimeout } from 'node:timers/promises';
 				import { test } from 'manten';
-
-				const setTimeout = (duration) => new Promise((resolve) => {
-					globalThis.setTimeout(resolve, duration);
-				});
 
 				// Using larger time differences to avoid timing flakiness
 				// Tests should complete in order: B (50ms), C (150ms), A (300ms)
@@ -268,11 +259,8 @@ describe('asynchronous', ({ test }) => {
 	test('timeout', async () => {
 		await using fixture = await createFixture({
 			'test.ts': `
+				import { setTimeout } from 'node:timers/promises';
 				import { test, describe } from 'manten';
-
-				const setTimeout = (duration) => new Promise((resolve) => {
-					globalThis.setTimeout(resolve, duration);
-				});
 
 				(async () => {
 					await test('should fail', async () => {
@@ -796,11 +784,8 @@ describe('unfinished test detection', ({ test }) => {
 test('retry with timeout interaction', async ({ onTestFail }) => {
 	await using fixture = await createFixture({
 		'test.ts': `
+			import { setTimeout } from 'node:timers/promises';
 			import { describe } from 'manten';
-
-			const setTimeout = (duration) => new Promise((resolve) => {
-				globalThis.setTimeout(resolve, duration);
-			});
 
 			describe('retry with timeout', ({ test }) => {
 				let attempt = 0;
