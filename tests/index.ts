@@ -291,8 +291,8 @@ describe('asynchronous', ({ test }) => {
 
 			(async () => {
 				await test('should fail', async () => {
-					await setTimeout(10);
-				}, 1);
+					await setTimeout(100);
+				}, 10);
 
 				await describe('timeout to be cleaned up from event loop', ({ test }) => {
 					test(
@@ -322,7 +322,7 @@ describe('asynchronous', ({ test }) => {
 
 		expect(testProcess.exitCode).toBe(1);
 		expect(testProcess.all).toMatch('✖ should fail');
-		expect(testProcess.all).toMatch('Error: Timeout: 1ms');
+		expect(testProcess.all).toMatch('Error: Timeout: 10ms');
 	});
 
 	test('timeout variations', async ({ onTestFail }) => {
