@@ -109,7 +109,7 @@ export const logReport = (allTests: TestMeta[]) => {
 	}
 
 	// Elapsed
-	output += `${newline}${dim(prettyMs(lastEndTime! - firstStartTime!))}`;
+	output += `${newline}${dim(prettyMs((lastEndTime ?? Date.now()) - firstStartTime!))}`;
 
 	// Passed
 	output += newline + (passingTests > 0 ? green : dim)(`${passingTests.toLocaleString()} passed`);

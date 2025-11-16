@@ -75,6 +75,7 @@ test('Failures should exit with 1', async () => {
 
 	expect(testProcess.exitCode).toBe(1);
 	expect(testProcess.stderr).toMatch('Expected: 2');
+	expect(testProcess.stderr).not.toMatch('matcherResult:');
 	expect(testProcess.stdout).toMatch('0 passed\n1 failed');
 });
 
@@ -845,6 +846,47 @@ describe('unfinished test detection', ({ test }) => {
 		expect(testProcess.stdout).toMatch('• unfinished test');
 		expect(testProcess.stdout).toMatch('1 passed');
 		expect(testProcess.stdout).toMatch('1 pending');
+	});
+
+	test('report with only pending tests', async ({ onTestFail }) => {
+		await using fixture = await createFixture({
+			'index.mjs': `
+			import { test } from 'manten';
+			import { setTimeout } from 'node:timers/promises';
+
+			test('never finishes', async () => {
+				console.log('test started');
+				await setTimeout(5000); // Hang indefinitely
+			});
+
+			// Exit process while test is running
+			globalThis.setTimeout(() => {
+				console.log('exiting');
+				process.exit(0);
+			}, 100);
+			`,
+			...installManten,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			all: true,
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(0);
+		expect(testProcess.stdout).toMatch('test started');
+		expect(testProcess.stdout).toMatch('exiting');
+		expect(testProcess.stdout).toMatch('• never finishes');
+		expect(testProcess.stdout).toMatch('0 passed');
+		expect(testProcess.stdout).toMatch('1 pending');
+		expect(testProcess.stdout).not.toMatch('failed');
+
+		// Asserts that the elapsed time was logged without crashing
+		expect(testProcess.stdout).toMatch(/\d+ms\n0 passed/);
 	});
 });
 
