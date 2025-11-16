@@ -201,13 +201,16 @@ await describe('Run one test at a time', ({ test }) => {
 ### Test suites
 Group tests into separate files by exporting a `testSuite()`. This can be useful for organization, or creating a set of reusable tests since test suites can accept arguments.
 
+Test suites can optionally have a name as the first parameter, which wraps all tests in an implicit `describe()` block:
+
 ```ts
 // test-suite-a.ts
 
 import { testSuite } from 'manten'
 
-export default testSuite((
-    { describe, test },
+// With name (wraps tests in describe block)
+export default testSuite('Test suite A', (
+    { test },
 
     // Can have parameters to accept
     _value: number
@@ -216,8 +219,19 @@ export default testSuite((
         // ...
     })
 
-    describe('Group B', () => {
+    test('Test B', async () => {
         // ...
+    })
+})
+
+// Without name (no grouping)
+export const anotherSuite = testSuite((
+    { describe, test }
+) => {
+    describe('Group', () => {
+        test('Test C', () => {
+            // ...
+        })
     })
 })
 ```
@@ -227,6 +241,9 @@ import testSuiteA from './test-suite-a'
 
 // Pass in a value to the test suite
 testSuiteA(100)
+// Output:
+// ✔ Test suite A › Test A
+// ✔ Test suite A › Test B
 ```
 
 #### Nesting test suites
@@ -395,14 +412,16 @@ Return value: `Promise<void>`
 
 Create a group of tests. The group tracks all child tests and waits for them to complete.
 
-### testSuite(testSuiteFunction, ...testSuiteArguments)
+### testSuite(name?, testSuiteFunction, ...testSuiteArguments)
+name (optional): `string`
+
 testSuiteFunction: `({ test, describe, runTestSuite }) => any`
 
 testSuiteArguments: `any[]`
 
 Return value: `(...testSuiteArguments) => Promise<ReturnType<testSuiteFunction>>`
 
-Create a test suite.
+Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block.
 
 ## FAQ
 

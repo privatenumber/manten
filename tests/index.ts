@@ -1005,3 +1005,28 @@ test('deep context nesting', async ({ onTestFail }) => {
 	expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Level 3 › Level 4 › Test at level 4');
 	expect(testProcess.stdout).toMatch('4 passed');
 });
+
+test('named test suites', async ({ onTestFail }) => {
+	const testProcess = await execaNode('./tests/specs/test-suite-named', {
+		env,
+		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
+	});
+
+	expect(testProcess.exitCode).toBe(0);
+
+	// Check all expected outputs appear (order may vary due to concurrency)
+	expect(testProcess.stdout).toMatch('✔ Named suite › Test A');
+	expect(testProcess.stdout).toMatch('✔ Named suite › Test B');
+	expect(testProcess.stdout).toMatch('✔ Parameterized suite › Test with param1');
+	expect(testProcess.stdout).toMatch('✔ Parameterized suite › Test with param2');
+	// When called directly (not via runTestSuite), suite doesn't inherit parent context
+	expect(testProcess.stdout).toMatch('✔ Nested named suite › Inner test');
+	expect(testProcess.stdout).toMatch('✔ Outer group › Other test');
+
+	expect(testProcess.stdout).toMatch('6 passed');
+	expect(testProcess.stdout).not.toMatch('failed');
+});

@@ -33,16 +33,34 @@ export type TestSuite<
 	...callbackArgs: InferCallback<Callback>['args']
 ) => InferCallback<Callback>['returnType'];
 
-export const testSuite = <
-	Callback extends TestSuiteCallback,
->(
-	callback: Callback,
-): TestSuite<Callback> => (
-	async function (...callbackArgs) {
+type TestSuiteFunction = {
+	<Callback extends TestSuiteCallback>(
+		name: string,
+		callback: Callback,
+	): TestSuite<Callback>;
+
+	<Callback extends TestSuiteCallback>(
+		callback: Callback,
+	): TestSuite<Callback>;
+};
+
+export const testSuite: TestSuiteFunction = <Callback extends TestSuiteCallback>(
+	nameOrCallback: string | Callback,
+	maybeCallback?: Callback,
+): TestSuite<Callback> => {
+	const name = typeof nameOrCallback === 'string' ? nameOrCallback : undefined;
+	const callback = typeof nameOrCallback === 'string' ? maybeCallback! : nameOrCallback;
+
+	return async function testSuiteWrapper(...callbackArgs) {
 		const context = this || defaultContext;
-		await callback(
-			context.api,
-			...callbackArgs,
-		);
-	}
-);
+
+		if (name) {
+			await context.api.describe(name, api => callback(api, ...callbackArgs));
+		} else {
+			await callback(
+				context.api,
+				...callbackArgs,
+			);
+		}
+	};
+};
