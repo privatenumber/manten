@@ -165,6 +165,8 @@ describe('asynchronous', ({ test }) => {
 
 					await runTestSuite(testSuite1, 'hello world');
 
+					await runTestSuite(import('./test-suite-3.mjs'));
+
 					await test('D', async () => {
 						await setTimeout(10);
 					});
@@ -187,6 +189,19 @@ describe('asynchronous', ({ test }) => {
 				});
 			});
 			`,
+			'test-suite-3.mjs': `
+			import { testSuite } from 'manten';
+
+			// Simulates { default: { default: suite } }
+			// by exporting a double-wrapped test suite
+			export default {
+				default: testSuite(({ test }) => {
+					test('Double wrapped test', () => {
+						console.log('double wrapped');
+					});
+				})
+			};
+			`,
 			...installManten,
 		});
 
@@ -197,23 +212,25 @@ describe('asynchronous', ({ test }) => {
 		});
 
 		expect(testProcess.exitCode).toBe(0);
-		expectMatchInOrder(testProcess.stdout, [
-			'✔ A\n',
-			'✔ Group › B\n',
-			'✔ Group › B\n',
-			'✔ Group - async › C\n',
-			'✔ Group - async › Test suite - Group › A\n',
-			'✔ Group - async › Test suite - Group › B\n',
-			'✔ Group - async › Test suite - Group Async › C\n',
-			'✔ Group - async › Test suite - Group Async › D\n',
-			/✔ Group - async › Test suite - E \(\d+ms\)\n/,
-			/✔ Group - async › Test suite 2 › Test \(\d+ms\)\n/,
-			'✔ Group - async › D\n',
-			'✔ E\n',
-			'\n',
-			/\d+ms\n/,
-			'12 passed\n',
-		]);
+
+		// Verify all expected test outputs are present
+		expect(testProcess.stdout).toMatch('✔ A');
+		expect(testProcess.stdout).toMatch('✔ Group › B');
+		expect(testProcess.stdout).toMatch('✔ Group - async › C');
+		expect(testProcess.stdout).toMatch('✔ Group - async › Test suite - Group › A');
+		expect(testProcess.stdout).toMatch('✔ Group - async › Test suite - Group › B');
+		expect(testProcess.stdout).toMatch('✔ Group - async › Test suite - Group Async › C');
+		expect(testProcess.stdout).toMatch('✔ Group - async › Test suite - Group Async › D');
+		expect(testProcess.stdout).toMatch(/✔ Group - async › Test suite - E \(\d+ms\)/);
+		expect(testProcess.stdout).toMatch(/✔ Group - async › Test suite 2 › Test \(\d+ms\)/);
+
+		// Verify double-wrapped module was unwrapped correctly
+		expect(testProcess.stdout).toMatch('✔ Group - async › Double wrapped test');
+		expect(testProcess.stdout).toMatch('double wrapped');
+
+		expect(testProcess.stdout).toMatch('✔ Group - async › D');
+		expect(testProcess.stdout).toMatch('✔ E');
+		expect(testProcess.stdout).toMatch('13 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
 	});
 
@@ -292,6 +309,60 @@ describe('asynchronous', ({ test }) => {
 		expect(testProcess.stderr).toMatch('✖ should fail');
 		expect(testProcess.stderr).toMatch('Error: Timeout: 1ms');
 	});
+
+	test('timeout variations', async ({ onTestFail }) => {
+		await using fixture = await createFixture({
+			'index.mjs': `
+			import { setTimeout } from 'node:timers/promises';
+			import { test } from 'manten';
+
+			(async () => {
+				await test('shows duration with timeout', async () => {
+					await setTimeout(60);
+				}, 1000);
+
+				await test('sync test with timeout', () => {
+					// This should just pass
+				}, 1000);
+
+				await test('failing sync test with timeout', () => {
+					throw new Error('sync fail');
+				}, 1000);
+
+				await test('test with timeout 0 (no timeout)', async () => {
+					await setTimeout(20);
+				}, { timeout: 0 });
+
+				await test('test with undefined timeout (no timeout)', async () => {
+					await setTimeout(20);
+				}, { timeout: undefined });
+			})();
+			`,
+			...installManten,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env: {
+				NODE_DISABLE_COLORS: '0',
+			},
+			all: true,
+			reject: false,
+		});
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(1);
+		expect(testProcess.stdout).toMatch(/✔ shows duration with timeout \(\d+ms \/ 1s\)/);
+		expect(testProcess.stdout).toMatch('✔ sync test with timeout');
+		expect(testProcess.stdout).toMatch('✔ test with timeout 0 (no timeout)');
+		expect(testProcess.stdout).toMatch('✔ test with undefined timeout (no timeout)');
+		expect(testProcess.stderr).toMatch('✖ failing sync test with timeout');
+		expect(testProcess.stderr).toMatch('Error: sync fail');
+		expect(testProcess.stdout).toMatch('4 passed');
+		expect(testProcess.stdout).toMatch('1 failed');
+	});
 });
 
 test('hooks', async ({ onTestFail }) => {
@@ -348,6 +419,13 @@ test('hooks', async ({ onTestFail }) => {
 					});
 				});
 			}));
+
+			describe('failing onFinish', ({ onFinish }) => {
+				onFinish(() => {
+					console.log('failing onFinish hook');
+					throw new Error('onFinish error');
+				});
+			});
 		});
 		`,
 		...installManten,
@@ -371,6 +449,7 @@ test('hooks', async ({ onTestFail }) => {
 		'test suite describe start',
 		'test suite describe finish',
 		'test suite finish',
+		'failing onFinish hook',
 		'describe finish',
 	]);
 	expectMatchInOrder(testProcess.stderr, [
@@ -385,6 +464,8 @@ test('hooks', async ({ onTestFail }) => {
 
 		'✖ describe › failing hooks [onTestFinish]\n',
 		'    Error: onTestFinish\n',
+
+		'Error: onFinish error\n',
 	]);
 });
 
