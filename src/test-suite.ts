@@ -2,7 +2,7 @@ import {
 	createContext,
 	type Context,
 	type ContextApi,
-} from './create-context.js';
+} from './context.js';
 
 const defaultContext = createContext();
 

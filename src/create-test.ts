@@ -9,7 +9,7 @@ import {
 	logTestFail,
 	logReport,
 } from './logger.js';
-import type { Context } from './create-context.js';
+import type { Context } from './context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';

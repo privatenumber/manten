@@ -1,4 +1,4 @@
-import type { ContextCallback } from './create-context.js';
+import type { ContextCallback } from './context.js';
 
 export type Callback = () => void | Promise<void>;
 
