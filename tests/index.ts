@@ -112,8 +112,8 @@ describe('asynchronous', ({ test }) => {
 			import { setTimeout } from 'node:timers/promises';
 			import { test, describe, testSuite } from 'manten';
 
-			const testSuite1 = testSuite(({ describe, test, runTestSuite }, value) => {
-				describe('Test suite - Group', ({ test }) => {
+			const testSuite1 = testSuite(async ({ describe, test, runTestSuite }, value) => {
+				await describe('Test suite - Group', ({ test }) => {
 					test('A', async () => {
 						await setTimeout(10);
 					});
@@ -123,7 +123,7 @@ describe('asynchronous', ({ test }) => {
 					});
 				});
 
-				describe('Test suite - Group Async', async ({ test }) => {
+				await describe('Test suite - Group Async', async ({ test }) => {
 					await test('C', async () => {
 						await setTimeout(30);
 					});
@@ -133,11 +133,11 @@ describe('asynchronous', ({ test }) => {
 					});
 				});
 
-				test('Test suite - E', async () => {
+				await test('Test suite - E', async () => {
 					await setTimeout(70);
 				});
 
-				runTestSuite((async () => {
+				await runTestSuite((async () => {
 					const { default: suite2 } = await import('./test-suite-2.mjs');
 					return suite2;
 				})());
@@ -306,8 +306,8 @@ describe('asynchronous', ({ test }) => {
 		});
 
 		expect(testProcess.exitCode).toBe(1);
-		expect(testProcess.stderr).toMatch('✖ should fail');
-		expect(testProcess.stderr).toMatch('Error: Timeout: 1ms');
+		expect(testProcess.all).toMatch('✖ should fail');
+		expect(testProcess.all).toMatch('Error: Timeout: 1ms');
 	});
 
 	test('timeout variations', async ({ onTestFail }) => {
