@@ -1,11 +1,26 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execaNode } from 'execa';
+import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from './utils/expect-match-in-order.js';
 import { test, expect, describe } from '#manten';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distPath = path.resolve(__dirname, '../dist/index.mjs');
 const env = { NODE_DISABLE_COLORS: '0' };
 
 test('Should prevent console.log hijack', async () => {
-	const testProcess = await execaNode('./tests/specs/hijack-console-log', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { test } from '${distPath}';
+
+			const noop = () => {};
+			console.log = noop;
+			test('should log', noop);
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		reject: false,
 	});
@@ -17,7 +32,22 @@ test('Should prevent console.log hijack', async () => {
 });
 
 test('describe should error', async () => {
-	const testProcess = await execaNode('./tests/specs/describe-error', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { describe } from '${distPath}';
+
+			const noop = () => {};
+
+			console.log = noop;
+			console.error = noop;
+
+			describe('should fail', () => {
+				throw new Error('Error');
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		reject: false,
 	});
@@ -27,7 +57,17 @@ test('describe should error', async () => {
 });
 
 test('Failures should exit with 1', async () => {
-	const testProcess = await execaNode('./tests/specs/test-fail', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { test, expect } from '${distPath}';
+
+			test('should fail', () => {
+				expect(1).toBe(2);
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		reject: false,
 	});
@@ -38,7 +78,25 @@ test('Failures should exit with 1', async () => {
 });
 
 test('synchronous', async () => {
-	const testProcess = await execaNode('./tests/specs/synchronous', { env });
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { test } from '${distPath}';
+
+			test('Async', async () => {
+				console.log('a');
+			});
+
+			test('B', () => {
+				console.log('b');
+			});
+
+			test('C', () => {
+				console.log('c');
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
 
 	expect(testProcess.exitCode).toBe(0);
 	expect(testProcess.stdout).toMatch('a\nb\nc\n✔ Async\n✔ B\n✔ C');
@@ -47,7 +105,95 @@ test('synchronous', async () => {
 
 describe('asynchronous', ({ test }) => {
 	test('sequential', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-sequential', { env });
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe, testSuite } from '${distPath}';
+
+				const setTimeout = (duration) => new Promise((resolve) => {
+					globalThis.setTimeout(resolve, duration);
+				});
+
+				const testSuite1 = testSuite(({ describe, test, runTestSuite }, value) => {
+					describe('Test suite - Group', ({ test }) => {
+						test('A', async () => {
+							await setTimeout(10);
+						});
+
+						test('B', async () => {
+							await setTimeout(20);
+						});
+					});
+
+					describe('Test suite - Group Async', async ({ test }) => {
+						await test('C', async () => {
+							await setTimeout(30);
+						});
+
+						await test('D', async () => {
+							await setTimeout(30);
+						});
+					});
+
+					test('Test suite - E', async () => {
+						await setTimeout(70);
+					});
+
+					runTestSuite((async () => {
+						const { default: suite2 } = await import('./test-suite-2.mjs');
+						return suite2;
+					})());
+				});
+
+				(async () => {
+					await test('A', async () => {
+						await setTimeout(10);
+					});
+
+					await describe('Group', ({ test }) => {
+						test('B', async () => {
+							await setTimeout(10);
+						});
+
+						test('B', async () => {
+							await setTimeout(10);
+						});
+					});
+
+					await describe('Group - async', async ({ test, runTestSuite }) => {
+						await test('C', async () => {
+							await setTimeout(10);
+						});
+
+						await runTestSuite(testSuite1, 'hello world');
+
+						await test('D', async () => {
+							await setTimeout(10);
+						});
+					});
+
+					await test('E', async () => {
+						await setTimeout(10);
+					});
+				})();
+			`,
+			'test-suite-2.mjs': `
+				import { testSuite } from '${distPath}';
+
+				const setTimeout = (duration) => new Promise((resolve) => {
+					globalThis.setTimeout(resolve, duration);
+				});
+
+				export default testSuite(({ describe }) => {
+					describe('Test suite 2', ({ test }) => {
+						test('Test', async () => {
+							await setTimeout(70);
+						});
+					});
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
 
 		onTestFail(() => {
 			console.log(testProcess);
@@ -75,7 +221,31 @@ describe('asynchronous', ({ test }) => {
 	});
 
 	test('concurrent', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-concurrent', { env });
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test } from '${distPath}';
+
+				const setTimeout = (duration) => new Promise((resolve) => {
+					globalThis.setTimeout(resolve, duration);
+				});
+
+				// Using larger time differences to avoid timing flakiness
+				// Tests should complete in order: B (50ms), C (150ms), A (300ms)
+				test('A', async () => {
+					await setTimeout(300);
+				});
+
+				test('B', async () => {
+					await setTimeout(50);
+				});
+
+				test('C', async () => {
+					await setTimeout(150);
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
 
 		expect(testProcess.exitCode).toBe(0);
 		expectMatchInOrder(testProcess.stdout, [
@@ -88,7 +258,39 @@ describe('asynchronous', ({ test }) => {
 	});
 
 	test('timeout', async () => {
-		const testProcess = await execaNode('./tests/specs/asynchronous-timeout', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				const setTimeout = (duration) => new Promise((resolve) => {
+					globalThis.setTimeout(resolve, duration);
+				});
+
+				(async () => {
+					await test('should fail', async () => {
+						await setTimeout(10);
+					}, 1);
+
+					await describe('timeout to be cleaned up from event loop', ({ test }) => {
+						test(
+							'on pass',
+							() => {},
+							5000,
+						);
+
+						test(
+							'on fail',
+							async () => {
+								throw new Error('catch me');
+							},
+							5000,
+						);
+					});
+				})();
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env,
 			all: true,
 			reject: false,
@@ -101,7 +303,64 @@ describe('asynchronous', ({ test }) => {
 });
 
 test('hooks', async ({ onTestFail }) => {
-	const testProcess = await execaNode('./tests/specs/hooks', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { describe, testSuite } from '${distPath}';
+
+			describe('describe', async ({ test, onFinish, runTestSuite }) => {
+				onFinish(() => {
+					console.log('describe finish');
+				});
+
+				await test('hooks', ({ onTestFail, onTestFinish }) => {
+					console.log('test start');
+					onTestFail((error) => {
+						console.log('test error', error instanceof Error ? error.message : error);
+					});
+
+					onTestFinish(() => {
+						console.log('test finish');
+					});
+
+					throw new Error('hello');
+				});
+
+				await test('failing hooks', ({ onTestFail, onTestFinish }) => {
+					onTestFail(() => {
+						throw new Error('onTestFail');
+					});
+
+					onTestFinish(() => {
+						throw new Error('onTestFinish');
+					});
+
+					throw new Error('hello');
+				});
+
+				await runTestSuite(testSuite(({ describe, onFinish }) => {
+					console.log('test suite start');
+
+					onFinish(() => {
+						/**
+						 * This is triggered after "describe finish" because
+						 * it shares the same context as the first describe
+						 */
+						console.log('test suite finish');
+					});
+
+					describe('test suite', ({ onFinish }) => {
+						console.log('test suite describe start');
+
+						onFinish(() => {
+							console.log('test suite describe finish');
+						});
+					});
+				}));
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		all: true,
 		reject: false,
@@ -138,7 +397,37 @@ test('hooks', async ({ onTestFail }) => {
 });
 
 test('retry', async ({ onTestFail }) => {
-	const testProcess = await execaNode('./tests/specs/retry', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { describe } from '${distPath}';
+
+			describe('retry', ({ test }) => {
+				{
+					let count = 0;
+					test('should fail 5 times', () => {
+						count += 1;
+						throw new Error(\`should fail \${count}\`);
+					}, {
+						retry: 5,
+					});
+				}
+
+				{
+					let count = 0;
+					test('should pass on 3rd try', () => {
+						count += 1;
+						if (count !== 3) {
+							throw new Error(\`should pass \${count}\`);
+						}
+					}, {
+						retry: 5,
+					});
+				}
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		all: true,
 		reject: false,
@@ -160,7 +449,35 @@ test('retry', async ({ onTestFail }) => {
 
 describe('TESTONLY filtering', ({ test }) => {
 	test('filters by substring match', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: 'Test A',
@@ -180,7 +497,35 @@ describe('TESTONLY filtering', ({ test }) => {
 	});
 
 	test('filters with describe prefix', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: 'Group',
@@ -201,7 +546,35 @@ describe('TESTONLY filtering', ({ test }) => {
 	});
 
 	test('filters with partial match', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: 'Another',
@@ -222,7 +595,35 @@ describe('TESTONLY filtering', ({ test }) => {
 	});
 
 	test('filters with special characters', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: '[chars]',
@@ -241,7 +642,35 @@ describe('TESTONLY filtering', ({ test }) => {
 	});
 
 	test('no matches skips all tests', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: 'NonExistentTest',
@@ -260,7 +689,35 @@ describe('TESTONLY filtering', ({ test }) => {
 	});
 
 	test('empty string runs all tests', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/testonly-filter', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test, describe } from '${distPath}';
+
+				test('Test A', () => {
+					console.log('Test A ran');
+				});
+
+				test('Test B', () => {
+					console.log('Test B ran');
+				});
+
+				describe('Group', ({ test }) => {
+					test('Test C', () => {
+						console.log('Group Test C ran');
+					});
+
+					test('Another Test', () => {
+						console.log('Group Another Test ran');
+					});
+				});
+
+				test('Special [chars]', () => {
+					console.log('Special chars ran');
+				});
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env: {
 				...env,
 				TESTONLY: '',
@@ -279,7 +736,28 @@ describe('TESTONLY filtering', ({ test }) => {
 
 describe('unfinished test detection', ({ test }) => {
 	test('shows pending symbol for incomplete tests', async ({ onTestFail }) => {
-		const testProcess = await execaNode('./tests/specs/unfinished-test.ts', {
+		await using fixture = await createFixture({
+			'test.ts': `
+				import { test } from '${distPath}';
+
+				console.log('MODULE LOADED');
+
+				(async () => {
+					console.log('IIFE STARTED');
+					await test('completed test', () => {
+						console.log('completed');
+					});
+
+					await test('unfinished test', () => {
+						console.log('started');
+						// Exit immediately to simulate crash
+						process.exit(1);
+					});
+				})();
+			`,
+		});
+
+		const testProcess = await execaNode(fixture.getPath('test.ts'), {
 			env,
 			all: true,
 			reject: false,
@@ -298,7 +776,35 @@ describe('unfinished test detection', ({ test }) => {
 });
 
 test('retry with timeout interaction', async ({ onTestFail }) => {
-	const testProcess = await execaNode('./tests/specs/retry-with-timeout', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { describe } from '${distPath}';
+
+			const setTimeout = (duration) => new Promise((resolve) => {
+				globalThis.setTimeout(resolve, duration);
+			});
+
+			describe('retry with timeout', ({ test }) => {
+				let attempt = 0;
+
+				test('should retry timed-out tests', async () => {
+					attempt += 1;
+
+					if (attempt < 3) {
+						// First two attempts: timeout
+						await setTimeout(100);
+					}
+					// Third attempt: complete quickly
+					await setTimeout(5);
+				}, {
+					retry: 3,
+					timeout: 50,
+				});
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		all: true,
 		reject: false,
@@ -315,7 +821,37 @@ test('retry with timeout interaction', async ({ onTestFail }) => {
 });
 
 test('deep context nesting', async ({ onTestFail }) => {
-	const testProcess = await execaNode('./tests/specs/deep-nesting', {
+	await using fixture = await createFixture({
+		'test.ts': `
+			import { describe } from '${distPath}';
+
+			describe('Level 1', ({ describe, test }) => {
+				test('Test at level 1', () => {
+					console.log('level 1');
+				});
+
+				describe('Level 2', ({ describe, test }) => {
+					test('Test at level 2', () => {
+						console.log('level 2');
+					});
+
+					describe('Level 3', ({ describe, test }) => {
+						test('Test at level 3', () => {
+							console.log('level 3');
+						});
+
+						describe('Level 4', ({ test }) => {
+							test('Test at level 4', () => {
+								console.log('level 4');
+							});
+						});
+					});
+				});
+			});
+		`,
+	});
+
+	const testProcess = await execaNode(fixture.getPath('test.ts'), {
 		env,
 		reject: false,
 	});
