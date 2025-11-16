@@ -1,23 +1,26 @@
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execaNode } from 'execa';
-import { createFixture } from 'fs-fixture';
+import { createFixture, type FileTree } from 'fs-fixture';
 import { expectMatchInOrder } from './utils/expect-match-in-order.js';
 import { test, expect, describe } from '#manten';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const distPath = path.resolve(__dirname, '../dist/index.mjs');
+const mantenPath = fileURLToPath(new URL('..', import.meta.url));
 const env = { NODE_DISABLE_COLORS: '0' };
+
+const installManten = {
+	'node_modules/manten': ({ symlink }) => symlink(mantenPath),
+} satisfies FileTree;
 
 test('Should prevent console.log hijack', async () => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { test } from '${distPath}';
+			import { test } from 'manten';
 
 			const noop = () => {};
 			console.log = noop;
 			test('should log', noop);
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -34,7 +37,7 @@ test('Should prevent console.log hijack', async () => {
 test('describe should error', async () => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { describe } from '${distPath}';
+			import { describe } from 'manten';
 
 			const noop = () => {};
 
@@ -45,6 +48,7 @@ test('describe should error', async () => {
 				throw new Error('Error');
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -59,12 +63,13 @@ test('describe should error', async () => {
 test('Failures should exit with 1', async () => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { test, expect } from '${distPath}';
+			import { test, expect } from 'manten';
 
 			test('should fail', () => {
 				expect(1).toBe(2);
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -80,7 +85,7 @@ test('Failures should exit with 1', async () => {
 test('synchronous', async () => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { test } from '${distPath}';
+			import { test } from 'manten';
 
 			test('Async', async () => {
 				console.log('a');
@@ -94,6 +99,7 @@ test('synchronous', async () => {
 				console.log('c');
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
@@ -107,7 +113,7 @@ describe('asynchronous', ({ test }) => {
 	test('sequential', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe, testSuite } from '${distPath}';
+				import { test, describe, testSuite } from 'manten';
 
 				const setTimeout = (duration) => new Promise((resolve) => {
 					globalThis.setTimeout(resolve, duration);
@@ -177,7 +183,7 @@ describe('asynchronous', ({ test }) => {
 				})();
 			`,
 			'test-suite-2.mjs': `
-				import { testSuite } from '${distPath}';
+				import { testSuite } from 'manten';
 
 				const setTimeout = (duration) => new Promise((resolve) => {
 					globalThis.setTimeout(resolve, duration);
@@ -191,6 +197,7 @@ describe('asynchronous', ({ test }) => {
 					});
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
@@ -223,7 +230,7 @@ describe('asynchronous', ({ test }) => {
 	test('concurrent', async () => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test } from '${distPath}';
+				import { test } from 'manten';
 
 				const setTimeout = (duration) => new Promise((resolve) => {
 					globalThis.setTimeout(resolve, duration);
@@ -243,6 +250,7 @@ describe('asynchronous', ({ test }) => {
 					await setTimeout(150);
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), { env });
@@ -260,7 +268,7 @@ describe('asynchronous', ({ test }) => {
 	test('timeout', async () => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				const setTimeout = (duration) => new Promise((resolve) => {
 					globalThis.setTimeout(resolve, duration);
@@ -288,6 +296,7 @@ describe('asynchronous', ({ test }) => {
 					});
 				})();
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -305,7 +314,7 @@ describe('asynchronous', ({ test }) => {
 test('hooks', async ({ onTestFail }) => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { describe, testSuite } from '${distPath}';
+			import { describe, testSuite } from 'manten';
 
 			describe('describe', async ({ test, onFinish, runTestSuite }) => {
 				onFinish(() => {
@@ -358,6 +367,7 @@ test('hooks', async ({ onTestFail }) => {
 				}));
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -399,7 +409,7 @@ test('hooks', async ({ onTestFail }) => {
 test('retry', async ({ onTestFail }) => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { describe } from '${distPath}';
+			import { describe } from 'manten';
 
 			describe('retry', ({ test }) => {
 				{
@@ -425,6 +435,7 @@ test('retry', async ({ onTestFail }) => {
 				}
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -451,7 +462,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('filters by substring match', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -475,6 +486,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -499,7 +511,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('filters with describe prefix', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -523,6 +535,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -548,7 +561,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('filters with partial match', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -572,6 +585,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -597,7 +611,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('filters with special characters', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -621,6 +635,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -644,7 +659,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('no matches skips all tests', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -668,6 +683,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -691,7 +707,7 @@ describe('TESTONLY filtering', ({ test }) => {
 	test('empty string runs all tests', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test, describe } from '${distPath}';
+				import { test, describe } from 'manten';
 
 				test('Test A', () => {
 					console.log('Test A ran');
@@ -715,6 +731,7 @@ describe('TESTONLY filtering', ({ test }) => {
 					console.log('Special chars ran');
 				});
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -738,7 +755,7 @@ describe('unfinished test detection', ({ test }) => {
 	test('shows pending symbol for incomplete tests', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'test.ts': `
-				import { test } from '${distPath}';
+				import { test } from 'manten';
 
 				console.log('MODULE LOADED');
 
@@ -755,6 +772,7 @@ describe('unfinished test detection', ({ test }) => {
 					});
 				})();
 			`,
+			...installManten,
 		});
 
 		const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -778,7 +796,7 @@ describe('unfinished test detection', ({ test }) => {
 test('retry with timeout interaction', async ({ onTestFail }) => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { describe } from '${distPath}';
+			import { describe } from 'manten';
 
 			const setTimeout = (duration) => new Promise((resolve) => {
 				globalThis.setTimeout(resolve, duration);
@@ -802,6 +820,7 @@ test('retry with timeout interaction', async ({ onTestFail }) => {
 				});
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
@@ -823,7 +842,7 @@ test('retry with timeout interaction', async ({ onTestFail }) => {
 test('deep context nesting', async ({ onTestFail }) => {
 	await using fixture = await createFixture({
 		'test.ts': `
-			import { describe } from '${distPath}';
+			import { describe } from 'manten';
 
 			describe('Level 1', ({ describe, test }) => {
 				test('Test at level 1', () => {
@@ -849,6 +868,7 @@ test('deep context nesting', async ({ onTestFail }) => {
 				});
 			});
 		`,
+		...installManten,
 	});
 
 	const testProcess = await execaNode(fixture.getPath('test.ts'), {
