@@ -10,6 +10,10 @@ const installManten = {
 	'node_modules/manten': ({ symlink }) => symlink(mantenPath),
 } satisfies FileTree;
 
+const env = {
+	NO_COLOR: '1',
+};
+
 test('Should prevent console.log hijack', async () => {
 	await using fixture = await createFixture({
 		'index.mjs': `
@@ -23,6 +27,7 @@ test('Should prevent console.log hijack', async () => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		reject: false,
 	});
 
@@ -50,6 +55,7 @@ test('describe should error', async () => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		reject: false,
 	});
 
@@ -70,6 +76,7 @@ test('Failures should exit with 1', async () => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		reject: false,
 	});
 
@@ -99,7 +106,9 @@ test('synchronous', async () => {
 		...installManten,
 	});
 
-	const testProcess = await execaNode(fixture.getPath('index.mjs'));
+	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
+	});
 
 	expect(testProcess.exitCode).toBe(0);
 	expect(testProcess.stdout).toMatch('a\nb\nc\n✔ Async\n✔ B\n✔ C');
@@ -206,7 +215,9 @@ describe('asynchronous', ({ test }) => {
 			...installManten,
 		});
 
-		const testProcess = await execaNode(fixture.getPath('index.mjs'));
+		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env,
+		});
 
 		onTestFail(() => {
 			console.log(testProcess);
@@ -258,7 +269,9 @@ describe('asynchronous', ({ test }) => {
 			...installManten,
 		});
 
-		const testProcess = await execaNode(fixture.getPath('index.mjs'));
+		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env,
+		});
 
 		expect(testProcess.exitCode).toBe(0);
 		expectMatchInOrder(testProcess.stdout, [
@@ -302,6 +315,7 @@ describe('asynchronous', ({ test }) => {
 		});
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env,
 			all: true,
 			reject: false,
 		});
@@ -433,6 +447,7 @@ test('hooks', async ({ onTestFail }) => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		all: true,
 		reject: false,
 	});
@@ -503,6 +518,7 @@ test('retry', async ({ onTestFail }) => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		all: true,
 		reject: false,
 	});
@@ -554,6 +570,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: 'Test A',
 			},
 			reject: false,
@@ -602,6 +619,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: 'Group',
 			},
 			reject: false,
@@ -651,6 +669,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: 'Another',
 			},
 			reject: false,
@@ -700,6 +719,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: '[chars]',
 			},
 			reject: false,
@@ -747,6 +767,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: 'NonExistentTest',
 			},
 			reject: false,
@@ -794,6 +815,7 @@ describe('TESTONLY filtering', ({ test }) => {
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
 			env: {
+				...env,
 				TESTONLY: '',
 			},
 			reject: false,
@@ -833,6 +855,7 @@ describe('unfinished test detection', ({ test }) => {
 		});
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env,
 			all: true,
 			reject: false,
 		});
@@ -869,6 +892,7 @@ describe('unfinished test detection', ({ test }) => {
 		});
 
 		const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+			env,
 			all: true,
 			reject: false,
 		});
@@ -918,6 +942,7 @@ test('retry with timeout interaction', async ({ onTestFail }) => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		all: true,
 		reject: false,
 	});
@@ -965,6 +990,7 @@ test('deep context nesting', async ({ onTestFail }) => {
 	});
 
 	const testProcess = await execaNode(fixture.getPath('index.mjs'), {
+		env,
 		reject: false,
 	});
 
