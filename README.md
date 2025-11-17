@@ -178,25 +178,49 @@ test('Test B', () => {
 
 This gives you fine-grained control: run tests concurrently within a group, then await the group to ensure completion before the next step.
 
-<!-- 
-### Concurrency limiting
+### Controlling concurrency
 
-You can limit the number of tests that run at the same time by setting the `concurrency` option. This limit only applies to immediate children.
+Limit how many tests run simultaneously within a `describe()` block using the `parallel` option. This is useful for preventing resource exhaustion when tests hit databases, APIs, or file systems.
 
 ```ts
-await describe('Run one test at a time', ({ test }) => {
-    test('Test A1', () => {
-        // ...
+describe('Database tests', ({ test }) => {
+    test('Query 1', async () => { /* ... */ })
+    test('Query 2', async () => { /* ... */ })
+    test('Query 3', async () => { /* ... */ })
+    test('Query 4', async () => { /* ... */ })
+}, { parallel: 2 }) // Only 2 tests run at a time
+```
+
+#### Parallel options
+
+- `parallel: false` — Sequential execution (one at a time)
+- `parallel: true` — Unbounded concurrency (all tests run simultaneously)
+- `parallel: N` — Fixed limit (up to N tests run concurrently)
+- `parallel: 'auto'` — Dynamic limit based on system load (adapts to CPU cores and load average)
+
+The limit applies to **immediate children only** (direct `test()` and `describe()` calls). Nested describes have independent limits.
+
+#### Explicit await bypasses parallel limiting
+
+Tests that you explicitly `await` run immediately, bypassing the parallel queue:
+
+```ts
+describe('Mixed', async ({ test }) => {
+    await test('Setup', async () => {
+        // Runs first
     })
 
-    // Test A2 will run concurrently with A1
-    test('Test A2', () => {
-        // ...
+    test('Test 1', async () => { /* ... */ })
+    test('Test 2', async () => { /* ... */ })
+    // Test 1 and 2 respect the parallel limit
+
+    await test('Teardown', async () => {
+        // Waits for Test 1 and 2, then runs
     })
-}, {
-    concurrency: 1
-})
-``` -->
+}, { parallel: 2 })
+```
+
+This gives you fine control: use the parallel limit for bulk tests, but `await` specific tests for setup/teardown that must run in sequence.
 
 ### Test suites
 Group tests into separate files by exporting a `testSuite()`. This can be useful for organization, or creating a set of reusable tests since test suites can accept arguments.

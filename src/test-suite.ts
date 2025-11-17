@@ -37,6 +37,9 @@ type TestSuiteFunction = {
 	<Callback extends TestSuiteCallback>(
 		name: string,
 		callback: Callback,
+		options?: {
+			parallel?: boolean | number | 'auto';
+		},
 	): TestSuite<Callback>;
 
 	<Callback extends TestSuiteCallback>(
@@ -47,15 +50,19 @@ type TestSuiteFunction = {
 export const testSuite: TestSuiteFunction = <Callback extends TestSuiteCallback>(
 	nameOrCallback: string | Callback,
 	maybeCallback?: Callback,
+	maybeOptions?: {
+		parallel?: boolean | number | 'auto';
+	},
 ): TestSuite<Callback> => {
 	const name = typeof nameOrCallback === 'string' ? nameOrCallback : undefined;
 	const callback = typeof nameOrCallback === 'string' ? maybeCallback! : nameOrCallback;
+	const options = typeof nameOrCallback === 'string' ? maybeOptions : undefined;
 
 	return async function testSuiteWrapper(...callbackArgs) {
 		const context = this || defaultContext;
 
 		if (name) {
-			await context.api.describe(name, api => callback(api, ...callbackArgs));
+			await context.api.describe(name, api => callback(api, ...callbackArgs), options);
 		} else {
 			await callback(
 				context.api,

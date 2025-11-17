@@ -13,6 +13,7 @@ import { createTest } from './create-test.js';
 import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
 import { unwrapModule, type ModuleDefaultExport } from './utils/unwrap-module.js';
+import { createSemaphore } from './utils/semaphore.js';
 
 export type ContextCallback = (api: ContextApi) => void;
 
@@ -38,13 +39,21 @@ export type Context = {
 	callbacks: {
 		onFinish: Callback[];
 	};
+	concurrencyLimiter?: {
+		acquire: () => Promise<() => void>;
+		setLimit: (newLimit: number) => void;
+		cleanup: () => void;
+	};
 	run: (
 		callback: ContextCallback,
 		parentContext?: Context,
 	) => Promise<void>;
 };
 
-export type CreateContext = (description?: string) => Context;
+export type CreateContext = (
+	description?: string,
+	parallel?: boolean | number | 'auto',
+) => Context;
 
 export const createDescribe = (
 	prefix?: string,
@@ -53,13 +62,30 @@ export const createDescribe = (
 	async (
 		description,
 		callback,
+		options,
 	) => {
 		if (prefix) {
 			description = `${prefix} ${description}`;
 		}
 
-		const context = createContext(description);
-		await context.run(callback, parentContext);
+		const context = createContext(description, options?.parallel);
+
+		const executeDescribe = async () => {
+			// Check if parent has concurrency limiter
+			if (parentContext?.concurrencyLimiter) {
+				// Acquire slot
+				const release = await parentContext.concurrencyLimiter.acquire();
+				try {
+					await context.run(callback, parentContext);
+				} finally {
+					release();
+				}
+			} else {
+				await context.run(callback, parentContext);
+			}
+		};
+
+		await executeDescribe();
 	}
 );
 
@@ -71,11 +97,22 @@ export const createRunTestSuite = (
 		testSuite,
 		...args
 	) => {
-		const context = createContext(prefix);
-		return context.run(async () => {
-			const maybeTestSuiteModule = unwrapModule(await testSuite);
-			return maybeTestSuiteModule.apply(context, args);
-		}, parentContext);
+		const executeTestSuite = () => {
+			const context = createContext(prefix);
+			return context.run(async () => {
+				const maybeTestSuiteModule = unwrapModule(await testSuite);
+				return maybeTestSuiteModule.apply(context, args);
+			}, parentContext);
+		};
+
+		// Check if parent has concurrency limiter
+		if (parentContext?.concurrencyLimiter) {
+			// Acquire slot
+			return parentContext.concurrencyLimiter.acquire().then(
+				release => executeTestSuite().finally(release),
+			);
+		}
+		return executeTestSuite();
 	}
 );
 
@@ -86,12 +123,32 @@ const topLevelRunTestSuite = createRunTestSuite();
 
 export const createContext: CreateContext = (
 	description?: string,
+	parallel?: boolean | number | 'auto',
 ): Context => {
+	let concurrencyLimiter: Context['concurrencyLimiter'];
+
+	if (parallel !== undefined) {
+		if (parallel === true) {
+			// Unbounded concurrency - no limiter needed
+			concurrencyLimiter = undefined;
+		} else if (parallel === false) {
+			// Sequential execution
+			concurrencyLimiter = createSemaphore(1);
+		} else if (typeof parallel === 'number') {
+			// Fixed concurrency limit
+			concurrencyLimiter = createSemaphore(parallel);
+		} else if (parallel === 'auto') {
+			// Dynamic concurrency based on system load
+			concurrencyLimiter = createSemaphore('auto');
+		}
+	}
+
 	const context = {
 		pendingTests: [],
 		callbacks: {
 			onFinish: [],
 		},
+		concurrencyLimiter,
 		run: async (
 			callback: ContextCallback,
 			parentContext?: Context,
@@ -111,6 +168,11 @@ export const createContext: CreateContext = (
 				consoleError(error);
 				process.exitCode = 1;
 			} finally {
+				// Clean up auto interval if it exists
+				if (concurrencyLimiter) {
+					concurrencyLimiter.cleanup();
+				}
+
 				for (const onFinish of context.callbacks.onFinish) {
 					try {
 						await onFinish();

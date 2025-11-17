@@ -24,6 +24,9 @@ export type Test = (
 export type Describe = (
 	description: string,
 	callback: ContextCallback,
+	options?: {
+		parallel?: boolean | number | 'auto';
+	},
 ) => Promise<void>;
 
 export type TestMeta = {

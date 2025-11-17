@@ -123,7 +123,22 @@ export const createTest = (
 
 		allTests.push(testMeta);
 
-		const testRunning = runTest(testMeta);
+		const executeTest = async () => {
+			// Check if parent has concurrency limiter
+			if (parentContext?.concurrencyLimiter) {
+				// Acquire slot
+				const release = await parentContext.concurrencyLimiter.acquire();
+				try {
+					await runTest(testMeta);
+				} finally {
+					release();
+				}
+			} else {
+				await runTest(testMeta);
+			}
+		};
+
+		const testRunning = executeTest();
 
 		if (parentContext) {
 			parentContext.pendingTests.push(testRunning);
