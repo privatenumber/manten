@@ -17,6 +17,14 @@ const successIcon = green('✔');
 const failureIcon = red('✖');
 const inProgressIcon = yellow('•');
 
+const formatTimestamp = () => {
+	const now = new Date();
+	const hours = String(now.getHours()).padStart(2, '0');
+	const minutes = String(now.getMinutes()).padStart(2, '0');
+	const seconds = String(now.getSeconds()).padStart(2, '0');
+	return dim(`${hours}:${minutes}:${seconds}`);
+};
+
 const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	const duration = (endTime || Date.now()) - startTime!;
 	let formatted = prettyMs(duration);
@@ -52,7 +60,7 @@ export const logTestFail = (
 	error: unknown,
 	stage? : 'onTestFail' | 'onTestFinish',
 ) => {
-	let title = `${failureIcon} ${getTestTitle(testMeta)}`;
+	let title = `${formatTimestamp()} ${failureIcon} ${getTestTitle(testMeta)}`;
 	if (stage) {
 		title += ` [${stage}]`;
 	}
@@ -62,7 +70,7 @@ export const logTestFail = (
 };
 
 export const logTestSuccess = (testMeta: TestMeta) => {
-	consoleLog(`${successIcon} ${getTestTitle(testMeta)}`);
+	consoleLog(`${formatTimestamp()} ${successIcon} ${getTestTitle(testMeta)}`);
 };
 
 export const logReport = (allTests: TestMeta[]) => {
