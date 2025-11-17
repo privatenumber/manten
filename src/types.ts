@@ -10,7 +10,7 @@ export type TestApi = {
 	onTestFinish: onFinish;
 };
 
-type TestFunction = (api: TestApi) => void | Promise<void>;
+type TestFunction = (api: TestApi) => (void | {skip: true}) | Promise<void | {skip: true}>;
 
 export type Test = (
 	title: string,
@@ -35,4 +35,5 @@ export type TestMeta = {
 	startTime?: number;
 	endTime?: number;
 	error?: unknown;
+	skip?: boolean;
 };

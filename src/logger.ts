@@ -16,6 +16,7 @@ export const {
 const successIcon = green('✔');
 const failureIcon = red('✖');
 const inProgressIcon = yellow('•');
+const skipIcon = dim('○');
 
 const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	const duration = (endTime || Date.now()) - startTime!;
@@ -65,6 +66,10 @@ export const logTestSuccess = (testMeta: TestMeta) => {
 	consoleLog(`${successIcon} ${getTestTitle(testMeta)}`);
 };
 
+export const logTestSkip = (testMeta: TestMeta) => {
+	consoleLog(`${skipIcon} ${getTestTitle(testMeta)}`);
+};
+
 export const logReport = (allTests: TestMeta[]) => {
 	if (allTests.length === 0) {
 		return;
@@ -73,6 +78,7 @@ export const logReport = (allTests: TestMeta[]) => {
 	const unfinishedTests: TestMeta[] = [];
 	let passingTests = 0;
 	let failedTests = 0;
+	let skippedTests = 0;
 	let firstStartTime: number | undefined;
 	let lastEndTime: number | undefined;
 
@@ -93,6 +99,8 @@ export const logReport = (allTests: TestMeta[]) => {
 
 			if (test.error) {
 				failedTests += 1;
+			} else if (test.skip) {
+				skippedTests += 1;
 			} else {
 				passingTests += 1;
 			}
@@ -117,6 +125,11 @@ export const logReport = (allTests: TestMeta[]) => {
 	// Failed
 	if (failedTests > 0) {
 		output += newline + red(`${failedTests.toLocaleString()} failed`);
+	}
+
+	// Skipped
+	if (skippedTests > 0) {
+		output += newline + dim(`${skippedTests.toLocaleString()} skipped`);
 	}
 
 	// Pending

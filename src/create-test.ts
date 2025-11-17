@@ -7,6 +7,7 @@ import type {
 import {
 	logTestSuccess,
 	logTestFail,
+	logTestSkip,
 	logReport,
 } from './logger.js';
 import type { Context } from './create-context.js';
@@ -53,13 +54,19 @@ const runTest = async (
 				testMeta.attempt = attempt;
 				testMeta.startTime = Date.now();
 				try {
-					await timeLimitFunction(
+					const result = await timeLimitFunction(
 						testFunction({
 							onTestFail: testFail.addHook,
 							onTestFinish: testFinish.addHook,
 						}),
 						timeout,
 					);
+					if (result && typeof result === 'object' && 'skip' in result && (result as any).skip === true) {
+						testMeta.skip = true;
+						logTestSkip(testMeta);
+					} else {
+						logTestSuccess(testMeta);
+					}
 				} catch (error) {
 					// Probably can remove error property now
 					logTestFail(testMeta, patchJestAssertionError(error));

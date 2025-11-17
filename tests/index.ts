@@ -160,3 +160,23 @@ test('retry', async ({ onTestFail }) => {
 	expect(testProcess.stdout).toMatch('1 passed');
 	expect(testProcess.stdout).toMatch('1 failed');
 });
+
+test('skip', async ({ onTestFail }) => {
+	const testProcess = await execaNode('./tests/specs/skip', {
+		env,
+		all: true,
+		reject: false,
+	});
+
+	onTestFail(() => {
+		console.log(testProcess);
+	});
+
+	expect(testProcess.all).toMatch('○ should skip');
+	expect(testProcess.all).toMatch('✔ should pass');
+	expect(testProcess.all).toMatch('✖ should fail');
+
+	expect(testProcess.stdout).toMatch('1 passed');
+	expect(testProcess.stdout).toMatch('1 failed');
+	expect(testProcess.stdout).toMatch('1 skipped');
+});

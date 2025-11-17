@@ -13,12 +13,12 @@ const setTimer = (
 };
 
 export const timeLimitFunction = (
-	promise: void | Promise<void>,
+	promise: unknown,
 	timeout: number | undefined,
 ) => {
+	const isPromise = promise && typeof promise === 'object' && 'then' in promise;
 	if (
-		!promise
-		|| !('then' in promise)
+		!isPromise
 		|| timeout === undefined
 		|| timeout === 0
 	) {
@@ -27,7 +27,7 @@ export const timeLimitFunction = (
 
 	const timer = setTimer(timeout);
 	return Promise.race([
-		promise,
+		promise as Promise<unknown>,
 		timer,
 	]).finally(() => {
 		clearTimeout(timer.timeoutId);
