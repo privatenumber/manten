@@ -25,12 +25,12 @@ jobs:
         with:
           run_install: true
 
-      - name: Type check
-        run: pnpm type-check
-
       # ESLint needs to be able to resolve 'manten' to allow shadowing
       - name: Build
         run: pnpm build
+
+      - name: Type check
+        run: pnpm type-check
 
       - name: Lint
         run: pnpm lint
