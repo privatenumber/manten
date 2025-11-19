@@ -283,6 +283,30 @@ describe('Level 1', ({ describe }) => {
 
 The test will be aborted after **2 seconds** because the group limit is stricter than the test limit.
 
+### Process-Level Timeout (CI Fail-Safe)
+
+For CI environments, set a global timeout to prevent zombie operations from hanging indefinitely:
+
+```ts
+import { setProcessTimeout } from 'manten'
+
+// Kill the entire process if tests don't complete within 30 minutes
+setProcessTimeout(30 * 60 * 1000)
+
+// Your tests...
+test('example', async () => { /* ... */ })
+```
+
+**How it works:**
+- Timer uses `.unref()` — if tests complete naturally, the process exits immediately
+- On timeout, prints `✖ Process timed out after ${ms}ms` and forces exit with code 1
+- Pending tests are automatically reported via the existing `process.on('exit')` hook
+
+**Why this matters:**
+Even with `AbortSignal`, a zombie async operation (e.g., hung socket, forgotten `setInterval`) can keep the Node.js event loop alive indefinitely. This causes CI jobs to hit infrastructure-level timeouts (often 6+ hours) without any diagnostic output.
+
+`setProcessTimeout` ensures your tests fail fast with clear reporting instead of silent infrastructure timeouts.
+
 ### Controlling concurrency
 
 Limit how many tests run simultaneously within a `describe()` block using the `parallel` option. This is useful for preventing resource exhaustion when tests hit databases, APIs, or file systems.
@@ -563,6 +587,13 @@ options (optional): `{ parallel?: boolean | number | 'auto', timeout?: number }`
 Return value: `(...testSuiteArguments) => Promise<ReturnType<testSuiteFunction>>`
 
 Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block. The options parameter only applies when a name is provided (since it uses `describe()` internally).
+
+### setProcessTimeout(ms)
+ms: `number`
+
+Return value: `void`
+
+Set a global timeout for the entire test process. If tests don't complete within the specified time, the process is forcibly terminated with exit code 1. The timer uses `.unref()`, so it won't prevent the process from exiting naturally if tests complete early. Pending tests are automatically reported when the timeout fires.
 
 ## FAQ
 

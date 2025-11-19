@@ -67,5 +67,7 @@ type DescribeOptions = {
 };
 type Describe = (description: string, callback: ContextCallback, options?: DescribeOptions) => Promise<void>;
 
-export { topLevelDescribe as describe, topLevelRunTestSuite as runTestSuite, topLevelTest as test, testSuite };
+declare const setProcessTimeout: (ms: number) => void;
+
+export { topLevelDescribe as describe, topLevelRunTestSuite as runTestSuite, setProcessTimeout, topLevelTest as test, testSuite };
 export type { Context, Describe, Test, TestSuite };
