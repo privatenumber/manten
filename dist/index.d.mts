@@ -7,9 +7,7 @@ type InferCallback<T extends TestSuiteCallback> = (T extends TestSuiteCallback<i
 } : never);
 type TestSuite<Callback extends TestSuiteCallback> = (this: void | Context, ...callbackArgs: InferCallback<Callback>['args']) => InferCallback<Callback>['returnType'];
 type TestSuiteFunction = {
-    <Callback extends TestSuiteCallback>(name: string, callback: Callback, options?: {
-        parallel?: boolean | number | 'auto';
-    }): TestSuite<Callback>;
+    <Callback extends TestSuiteCallback>(name: string, callback: Callback, options?: DescribeOptions): TestSuite<Callback>;
     <Callback extends TestSuiteCallback>(callback: Callback): TestSuite<Callback>;
 };
 declare const testSuite: TestSuiteFunction;
@@ -63,10 +61,11 @@ type Test = (title: string, testFunction: TestFunction, timeoutOrOptions?: numbe
     timeout?: number;
     retry?: number;
 }) => Promise<void>;
-type Describe = (description: string, callback: ContextCallback, options?: {
+type DescribeOptions = {
     parallel?: boolean | number | 'auto';
     timeout?: number;
-}) => Promise<void>;
+};
+type Describe = (description: string, callback: ContextCallback, options?: DescribeOptions) => Promise<void>;
 
 export { topLevelDescribe as describe, topLevelRunTestSuite as runTestSuite, topLevelTest as test, testSuite };
 export type { Context, Describe, Test, TestSuite };

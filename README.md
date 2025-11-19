@@ -255,13 +255,13 @@ describe('API Suite', ({ test }) => {
 
 ```ts
 describe('Database tests', async ({ test, signal }) => {
-    const db = await connectDB()
+    const database = await connectDatabase()
 
     // Clean up connection when group times out
-    signal.addEventListener('abort', () => db.close())
+    signal.addEventListener('abort', () => database.close())
 
-    test('query 1', async ({ signal }) => {
-        await db.query('...', { signal }) // Aborts on group timeout
+    test('query 1', async ({ signal: testSignal }) => {
+        await database.query('...', { signal: testSignal }) // Aborts on group timeout
     })
 }, { timeout: 30_000 })
 ```
@@ -393,10 +393,10 @@ describe('Group', ({ runTestSuite }) => {
 Tests receive an API object with hooks for debugging and cleanup:
 
 ```ts
-test('example', async ({ signal, onTestFail, onTestFinish }) => {
-    // signal: AbortSignal - see "Timeouts & Cleanup" section above
-    // onTestFail: Debug hook when test fails
-    // onTestFinish: Cleanup hook after test completes
+test('example', async (_api) => {
+    // _api.signal: AbortSignal - see "Timeouts & Cleanup" section above
+    // _api.onTestFail: Debug hook when test fails
+    // _api.onTestFinish: Cleanup hook after test completes
 })
 ```
 
@@ -542,25 +542,27 @@ Return value: `Promise<void>`
 
 Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings.
 
-### describe(description, testGroupFunction)
+### describe(description, testGroupFunction, options?)
 description: `string`
 
-testGroupFunction: `(api: { test, describe, runTestSuite, onFinish }) => void | Promise<void>`
+testGroupFunction: `(api: { signal, test, describe, runTestSuite, onFinish }) => void | Promise<void>`
+
+options: `{ parallel?: boolean | number | 'auto', timeout?: number }`
 
 Return value: `Promise<void>`
 
-Create a group of tests. The group tracks all child tests and waits for them to complete.
+Create a group of tests. The group tracks all child tests and waits for them to complete. Supports `parallel` for concurrency limiting and `timeout` for collective time limits.
 
-### testSuite(name?, testSuiteFunction, ...testSuiteArguments)
+### testSuite(name?, testSuiteFunction, options?)
 name (optional): `string`
 
-testSuiteFunction: `({ test, describe, runTestSuite }) => any`
+testSuiteFunction: `(api: { signal, test, describe, runTestSuite }, ...args) => any`
 
-testSuiteArguments: `any[]`
+options (optional): `{ parallel?: boolean | number | 'auto', timeout?: number }`
 
 Return value: `(...testSuiteArguments) => Promise<ReturnType<testSuiteFunction>>`
 
-Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block.
+Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block. The options parameter only applies when a name is provided (since it uses `describe()` internally).
 
 ## FAQ
 
