@@ -1,6 +1,7 @@
 import { describe } from 'manten';
 
 describe('manten', ({ runTestSuite }) => {
+	runTestSuite(import('./specs/abort-signal.js'));
 	runTestSuite(import('./specs/api.js'));
 	runTestSuite(import('./specs/async.js'));
 	runTestSuite(import('./specs/filtering.js'));

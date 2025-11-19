@@ -6,6 +6,7 @@ export type onFinish = (callback: Callback) => void;
 
 export type onTestFailCallback = (error: unknown) => void;
 export type TestApi = {
+	signal: AbortSignal;
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
 };

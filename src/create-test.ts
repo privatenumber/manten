@@ -52,13 +52,18 @@ const runTest = async (
 			async (attempt) => {
 				testMeta.attempt = attempt;
 				testMeta.startTime = Date.now();
+
+				const abortController = new AbortController();
+
 				try {
 					await timeLimitFunction(
 						testFunction({
+							signal: abortController.signal,
 							onTestFail: testFail.addHook,
 							onTestFinish: testFinish.addHook,
 						}),
 						timeout,
+						abortController,
 					);
 				} catch (error) {
 					// Probably can remove error property now
@@ -66,6 +71,9 @@ const runTest = async (
 					await handleError(error);
 					throw error;
 				} finally {
+					if (!abortController.signal.aborted) {
+						abortController.abort();
+					}
 					await testFinish.runHooks();
 					testMeta.endTime = Date.now();
 				}

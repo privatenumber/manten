@@ -132,13 +132,68 @@ test('Test B', async () => {
 
 **This is the key design principle:** native JavaScript async control with zero overhead. No worker pools, no queue management—just the primitives you already know.
 
-#### Timeouts
-Pass in the max time duration (in milliseconds) a test can run for as the third argument to `test()`.
+### Timeouts & Cleanup
+
+Set a max test duration by passing a timeout (in milliseconds) as the third argument:
 
 ```ts
 test('should finish within 1s', async () => {
     await slowTest()
 }, 1000)
+```
+
+When a timeout is set, the test receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal). This signal lets you stop in-flight work—fetches, watchers, timers—once the time limit hits.
+
+Asynchronous operations in JavaScript don't provide a built-in way to terminate them from the outside, so cancellation is handled cooperatively. `AbortSignal` is the standard mechanism for that: Manten marks the test as aborted, and your code responds by shutting things down cleanly.
+
+### Example: Graceful Cleanup
+
+```ts
+test('fetch with timeout', async ({ signal }) => {
+    // Pass the signal to APIs that support cancellation
+    await fetch('https://api.example.com', { signal })
+}, 5000)
+
+test('custom cleanup', async ({ signal }) => {
+    const watcher = startFileWatcher()
+
+    // Close the watcher when the test times out
+    signal.addEventListener('abort', () => watcher.close())
+
+    await watcher.waitForChange()
+}, 3000)
+```
+
+### Early Exit Pattern (`throwIfAborted`)
+
+For multi-step tests, call `signal.throwIfAborted()` between expensive operations.
+If the timeout has fired, execution stops immediately and later steps won't run.
+
+```ts
+test('heavy multi-step flow', async ({ signal }) => {
+    await generateBigFile()
+    signal.throwIfAborted()
+
+    await uploadFile()
+    signal.throwIfAborted()
+
+    await verifyUpload()
+}, 10_000)
+```
+
+### Combining Signals (Node.js 20+)
+
+If you need both the test timeout *and* your own cancellation logic, combine them with `AbortSignal.any()`:
+
+```ts
+test('user cancellation + timeout', async ({ signal }) => {
+    const userCancel = new AbortController()
+
+    // Merge both signals into one
+    const combined = AbortSignal.any([signal, userCancel.signal])
+
+    await doWork({ signal: combined })
+}, 5000)
 ```
 
 #### Retries
@@ -285,9 +340,19 @@ describe('Group', ({ runTestSuite }) => {
 
 #### Test hooks
 
+Tests receive an API object with hooks for debugging and cleanup:
+
+```ts
+test('example', async ({ signal, onTestFail, onTestFinish }) => {
+    // signal: AbortSignal - see "Timeouts & Cleanup" section above
+    // onTestFail: Debug hook when test fails
+    // onTestFinish: Cleanup hook after test completes
+})
+```
+
 ##### `onTestFail`
 
-By using the `onTestFail` hook, you can debug tests by logging relevant information when a test fails.
+Debug tests by logging relevant information when a test fails.
 
 ```ts
 test('Test', async ({ onTestFail }) => {
@@ -304,7 +369,7 @@ test('Test', async ({ onTestFail }) => {
 
 ##### `onTestFinish`
 
-By using the `onTestFinish` hook, you can execute cleanup code after the test finishes, even if it errors.
+Execute cleanup code after the test finishes, even if it errors.
 
 ```ts
 test('Test', async ({ onTestFinish }) => {
