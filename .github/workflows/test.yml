@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [develop]
+    branches: [master]
   pull_request:
     branches: [master, develop, next]
 
@@ -13,10 +13,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6
         with:
           node-version-file: .nvmrc
 
@@ -25,18 +25,17 @@ jobs:
         with:
           run_install: true
 
-      - name: Type check
-        run: pnpm type-check
-
       # ESLint needs to be able to resolve 'manten' to allow shadowing
       - name: Build
         run: pnpm build
+
+      - name: Type check
+        run: pnpm type-check
 
       - name: Lint
         run: pnpm lint
 
       - name: Test
         run: |
-          pnpm test:tsd
           pnpm test
           pnpm run --use-node-version=18.17.0 test

@@ -1,8 +1,13 @@
 {
 	"compilerOptions": {
-		"module": "Node16",
+		"lib": [
+			"ESNext",
+		],
+		"module": "Preserve",
 		"strict": true,
+		"noEmit": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+		"skipLibCheck": true,
 	},
 }

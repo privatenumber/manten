@@ -2,10 +2,15 @@ import { createDeferred } from './deferred.js';
 
 const setTimer = (
 	duration: number,
+	abortController?: AbortController,
 ) => {
 	const deferred = createDeferred();
 	const timeoutId = setTimeout(
-		() => deferred.reject(new Error(`Timeout: ${duration}ms`)),
+		() => {
+			const error = new Error(`Timeout: ${duration}ms`);
+			abortController?.abort(error);
+			deferred.reject(error);
+		},
 		duration,
 	);
 
@@ -15,6 +20,7 @@ const setTimer = (
 export const timeLimitFunction = (
 	promise: void | Promise<void>,
 	timeout: number | undefined,
+	abortController?: AbortController,
 ) => {
 	if (
 		!promise
@@ -25,7 +31,7 @@ export const timeLimitFunction = (
 		return promise;
 	}
 
-	const timer = setTimer(timeout);
+	const timer = setTimer(timeout, abortController);
 	return Promise.race([
 		promise,
 		timer,

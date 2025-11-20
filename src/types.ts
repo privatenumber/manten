@@ -1,4 +1,4 @@
-import type { ContextCallback } from './create-context.js';
+import type { ContextCallback } from './context.js';
 
 export type Callback = () => void | Promise<void>;
 
@@ -6,6 +6,7 @@ export type onFinish = (callback: Callback) => void;
 
 export type onTestFailCallback = (error: unknown) => void;
 export type TestApi = {
+	signal: AbortSignal;
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
 	skip: (reason?: string) => never;
@@ -22,9 +23,15 @@ export type Test = (
 	},
 ) => Promise<void>;
 
+export type DescribeOptions = {
+	parallel?: boolean | number | 'auto';
+	timeout?: number;
+};
+
 export type Describe = (
 	description: string,
 	callback: ContextCallback,
+	options?: DescribeOptions,
 ) => Promise<void>;
 
 export type TestMeta = {

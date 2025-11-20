@@ -10,7 +10,7 @@ import {
 	logTestSkip,
 	logReport,
 } from './logger.js';
-import type { Context } from './create-context.js';
+import type { Context } from './context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
@@ -38,6 +38,7 @@ const patchJestAssertionError = (error: unknown) => {
 
 const runTest = async (
 	testMeta: TestMeta,
+	parentContext?: Context,
 ) => {
 	const { testFunction, timeout } = testMeta;
 
@@ -61,9 +62,29 @@ const runTest = async (
 			async (attempt) => {
 				testMeta.attempt = attempt;
 				testMeta.startTime = Date.now();
+
+				const abortController = new AbortController();
+
+				// Listen to parent context abort
+				let handleParentAbort: (() => void) | undefined;
+				if (parentContext) {
+					handleParentAbort = () => {
+						if (!abortController.signal.aborted) {
+							abortController.abort(parentContext.abortController.signal.reason);
+						}
+					};
+					parentContext.abortController.signal.addEventListener('abort', handleParentAbort);
+
+					// Check if parent already aborted (missed the event)
+					if (parentContext.abortController.signal.aborted) {
+						handleParentAbort();
+					}
+				}
+
 				try {
 					await timeLimitFunction(
 						testFunction({
+							signal: abortController.signal,
 							onTestFail: testFail.addHook,
 							onTestFinish: testFinish.addHook,
 							skip: (reason?: string) => {
@@ -71,6 +92,7 @@ const runTest = async (
 							},
 						}),
 						timeout,
+						abortController,
 					);
 					logTestSuccess(testMeta);
 				} catch (error) {
@@ -84,6 +106,14 @@ const runTest = async (
 						throw error;
 					}
 				} finally {
+					// Clean up parent listener to prevent memory leak
+					if (parentContext && handleParentAbort) {
+						parentContext.abortController.signal.removeEventListener('abort', handleParentAbort);
+					}
+
+					if (!abortController.signal.aborted) {
+						abortController.abort();
+					}
 					await testFinish.runHooks();
 					testMeta.endTime = Date.now();
 				}
@@ -140,7 +170,22 @@ export const createTest = (
 
 		allTests.push(testMeta);
 
-		const testRunning = runTest(testMeta);
+		const executeTest = async () => {
+			// Check if parent has concurrency limiter
+			if (parentContext?.concurrencyLimiter) {
+				// Acquire slot
+				const release = await parentContext.concurrencyLimiter.acquire();
+				try {
+					await runTest(testMeta, parentContext);
+				} finally {
+					release();
+				}
+			} else {
+				await runTest(testMeta, parentContext);
+			}
+		};
+
+		const testRunning = executeTest();
 
 		if (parentContext) {
 			parentContext.pendingTests.push(testRunning);

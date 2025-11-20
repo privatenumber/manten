@@ -18,6 +18,14 @@ const failureIcon = red('✖');
 const inProgressIcon = yellow('•');
 const skipIcon = dim('○');
 
+const formatTimestamp = () => {
+	const now = new Date();
+	const hours = String(now.getHours()).padStart(2, '0');
+	const minutes = String(now.getMinutes()).padStart(2, '0');
+	const seconds = String(now.getSeconds()).padStart(2, '0');
+	return dim(`${hours}:${minutes}:${seconds}`);
+};
+
 const prettyDuration = ({ startTime, timeout, endTime }: TestMeta) => {
 	const duration = (endTime || Date.now()) - startTime!;
 	let formatted = prettyMs(duration);
@@ -53,7 +61,7 @@ export const logTestFail = (
 	error: unknown,
 	stage? : 'onTestFail' | 'onTestFinish',
 ) => {
-	let title = `${failureIcon} ${getTestTitle(testMeta)}`;
+	let title = `${formatTimestamp()} ${failureIcon} ${getTestTitle(testMeta)}`;
 	if (stage) {
 		title += ` [${stage}]`;
 	}
@@ -63,7 +71,7 @@ export const logTestFail = (
 };
 
 export const logTestSuccess = (testMeta: TestMeta) => {
-	consoleLog(`${successIcon} ${getTestTitle(testMeta)}`);
+	consoleLog(`${formatTimestamp()} ${successIcon} ${getTestTitle(testMeta)}`);
 };
 
 export const logTestSkip = (testMeta: TestMeta) => {
@@ -117,7 +125,7 @@ export const logReport = (allTests: TestMeta[]) => {
 	}
 
 	// Elapsed
-	output += `${newline}${dim(prettyMs(lastEndTime! - firstStartTime!))}`;
+	output += `${newline}${dim(prettyMs((lastEndTime ?? Date.now()) - firstStartTime!))}`;
 
 	// Passed
 	output += newline + (passingTests > 0 ? green : dim)(`${passingTests.toLocaleString()} passed`);
