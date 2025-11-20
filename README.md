@@ -233,6 +233,63 @@ test('Test B', () => {
 
 This gives you fine-grained control: run tests concurrently within a group, then await the group to ensure completion before the next step.
 
+### Group Timeouts
+
+A group timeout puts a single deadline on an entire `describe()` block — setup + all tests. If everything finishes before the limit, nothing changes. If not, the whole group is aborted cleanly.
+
+```ts
+describe('API Suite', ({ test }) => {
+    test('endpoint 1', async () => { /* ... */ })
+    test('endpoint 2', async () => { /* ... */ })
+    test('endpoint 3', async () => { /* ... */ })
+}, { timeout: 10_000 }) // All tests + setup must finish within 10s
+```
+
+The timer starts as soon as the `describe` callback begins. If the limit is hit, every active test in the group receives an abort signal. Individual tests can still define their own timeouts — whichever is stricter wins. This makes group timeouts useful for bounding entire suites, integration flows, or anything with heavy setup/teardown.
+
+You can also hook into the group's `signal` for cleanup:
+
+```ts
+describe('Database tests', async ({ test, signal }) => {
+    const database = await connectDatabase()
+
+    signal.addEventListener('abort', () => database.close())
+
+    test('query', async ({ signal: testSignal }) => {
+        await database.query('...', { signal: testSignal })
+    })
+}, { timeout: 30_000 })
+```
+
+Nested groups follow the same rule: the tightest timeout always applies.
+
+```ts
+describe('Level 1', ({ describe }) => {
+    describe('Level 2', ({ test }) => {
+        test('slow test', async ({ signal }) => {
+            await slowOp({ signal })
+        }, 5000)
+    }, { timeout: 2000 }) // This wins
+}, { timeout: 10_000 })
+```
+
+Here, the test is aborted after **2 seconds** because the group's limit is stricter than the test's own setting.
+
+### Process-Level Timeout
+
+In CI, it helps to put a firm deadline on the *entire* test run. A stuck async task or open handle can keep Node.js alive long past when everything should be done, and most CI systems will eventually kill the job from the outside—abruptly, with no chance for manten to report what was still pending.
+
+`setProcessTimeout` gives you a controlled version of that behavior:
+
+```ts
+import { setProcessTimeout } from 'manten'
+
+// Kill the process if tests don't complete within 10 minutes
+setProcessTimeout(10 * 60 * 1000)
+```
+
+If your suite finishes in time, the process exits normally. If it doesn't, Manten logs a clear timeout message, exits with code 1, and still runs its own shutdown hooks so any unfinished tests are reported before the process dies. You get a clean, informative failure instead of a silent multi-hour hang.
+
 ### Controlling concurrency
 
 Limit how many tests run simultaneously within a `describe()` block using the `parallel` option. This is useful for preventing resource exhaustion when tests hit databases, APIs, or file systems.
@@ -492,25 +549,34 @@ Return value: `Promise<void>`
 
 Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings.
 
-### describe(description, testGroupFunction)
+### describe(description, testGroupFunction, options?)
 description: `string`
 
-testGroupFunction: `(api: { test, describe, runTestSuite, onFinish }) => void | Promise<void>`
+testGroupFunction: `(api: { signal, test, describe, runTestSuite, onFinish }) => void | Promise<void>`
+
+options: `{ parallel?: boolean | number | 'auto', timeout?: number }`
 
 Return value: `Promise<void>`
 
-Create a group of tests. The group tracks all child tests and waits for them to complete.
+Create a group of tests. The group tracks all child tests and waits for them to complete. Supports `parallel` for concurrency limiting and `timeout` for collective time limits.
 
-### testSuite(name?, testSuiteFunction, ...testSuiteArguments)
+### testSuite(name?, testSuiteFunction, options?)
 name (optional): `string`
 
-testSuiteFunction: `({ test, describe, runTestSuite }) => any`
+testSuiteFunction: `(api: { signal, test, describe, runTestSuite }, ...args) => any`
 
-testSuiteArguments: `any[]`
+options (optional): `{ parallel?: boolean | number | 'auto', timeout?: number }`
 
 Return value: `(...testSuiteArguments) => Promise<ReturnType<testSuiteFunction>>`
 
-Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block.
+Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block. The options parameter only applies when a name is provided (since it uses `describe()` internally).
+
+### setProcessTimeout(ms)
+ms: `number`
+
+Return value: `void`
+
+Set a global timeout for the entire test process. If tests don't complete within the specified time, the process is forcibly terminated with exit code 1. The timer uses `.unref()`, so it won't prevent the process from exiting naturally if tests complete early. Pending tests are automatically reported when the timeout fires.
 
 ## FAQ
 

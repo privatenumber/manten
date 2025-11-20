@@ -65,12 +65,12 @@ export default testSuite('async', ({ test, describe }) => {
 				});
 
 				test('Test B', async () => {
-					await setTimeout(150);
+					await setTimeout(200);
 					console.log('B');
 				});
 
 				test('Test C', async () => {
-					await setTimeout(300);
+					await setTimeout(500);
 					console.log('C');
 				});
 				`,
@@ -88,10 +88,10 @@ export default testSuite('async', ({ test, describe }) => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { test } from 'manten';
-				import { setTimeout } from 'node:timers/promises';
 
 				test('should timeout', async () => {
-					await setTimeout(200);
+					// Hang forever - only way out is timeout
+					await new Promise(() => {});
 				}, 100);
 				`,
 				...installManten,
@@ -107,14 +107,14 @@ export default testSuite('async', ({ test, describe }) => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { test } from 'manten';
-				import { setTimeout } from 'node:timers/promises';
 
 				test('timeout option', async () => {
-					await setTimeout(200);
+					// Hang forever - only way out is timeout
+					await new Promise(() => {});
 				}, { timeout: 100 });
 
 				test('no timeout', async () => {
-					await setTimeout(50);
+					// Complete immediately
 				});
 				`,
 				...installManten,

@@ -29,6 +29,7 @@ const patchJestAssertionError = (error: unknown) => {
 
 const runTest = async (
 	testMeta: TestMeta,
+	parentContext?: Context,
 ) => {
 	const { testFunction, timeout } = testMeta;
 
@@ -55,6 +56,22 @@ const runTest = async (
 
 				const abortController = new AbortController();
 
+				// Listen to parent context abort
+				let handleParentAbort: (() => void) | undefined;
+				if (parentContext) {
+					handleParentAbort = () => {
+						if (!abortController.signal.aborted) {
+							abortController.abort(parentContext.abortController.signal.reason);
+						}
+					};
+					parentContext.abortController.signal.addEventListener('abort', handleParentAbort);
+
+					// Check if parent already aborted (missed the event)
+					if (parentContext.abortController.signal.aborted) {
+						handleParentAbort();
+					}
+				}
+
 				try {
 					await timeLimitFunction(
 						testFunction({
@@ -71,6 +88,11 @@ const runTest = async (
 					await handleError(error);
 					throw error;
 				} finally {
+					// Clean up parent listener to prevent memory leak
+					if (parentContext && handleParentAbort) {
+						parentContext.abortController.signal.removeEventListener('abort', handleParentAbort);
+					}
+
 					if (!abortController.signal.aborted) {
 						abortController.abort();
 					}
@@ -137,12 +159,12 @@ export const createTest = (
 				// Acquire slot
 				const release = await parentContext.concurrencyLimiter.acquire();
 				try {
-					await runTest(testMeta);
+					await runTest(testMeta, parentContext);
 				} finally {
 					release();
 				}
 			} else {
-				await runTest(testMeta);
+				await runTest(testMeta, parentContext);
 			}
 		};
 

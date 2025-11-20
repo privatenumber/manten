@@ -67,4 +67,76 @@ export default testSuite('test-suites', ({ test }) => {
 		expect(testProcess.stdout).toMatch('6 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
 	});
+
+	test('test suite with timeout', async ({ onTestFail }) => {
+		await using fixture = await createFixture({
+			'index.mjs': `
+			import { setTimeout } from 'node:timers/promises';
+			import { testSuite } from 'manten';
+
+			const timedSuite = testSuite('Timed suite', ({ test }) => {
+				test('fast test', async ({ signal }) => {
+					// Complete immediately
+				});
+
+				test('slow test', async ({ signal }) => {
+					// Long timeout that will be aborted
+					await setTimeout(3_600_000, null, { signal });
+				});
+			}, { timeout: 100 });
+
+			timedSuite();
+			`,
+			...installManten,
+		});
+
+		const testProcess = await node(fixture.getPath('index.mjs'));
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(1);
+		expect(testProcess.stderr).toMatch('Timeout: 100ms');
+		expect(testProcess.stdout).toMatch('1 passed');
+		expect(testProcess.stdout).toMatch('1 failed');
+	});
+
+	test('timeout propagates across module boundaries via runTestSuite', async ({ onTestFail }) => {
+		await using fixture = await createFixture({
+			'suite.mjs': `
+			import { setTimeout } from 'node:timers/promises';
+			import { testSuite } from 'manten';
+
+			export default testSuite('External suite', ({ test }) => {
+				test('slow test', async ({ signal }) => {
+					console.log('EXTERNAL_STARTED');
+					console.log('EXTERNAL_ABORTED:', signal.aborted);
+					// Long timeout that will be aborted
+					await setTimeout(3_600_000, null, { signal });
+				});
+			});
+			`,
+			'index.mjs': `
+			import { describe } from 'manten';
+
+			describe('Parent', ({ runTestSuite }) => {
+				runTestSuite(import('./suite.mjs'));
+			}, { timeout: 100 });
+			`,
+			...installManten,
+		});
+
+		const testProcess = await node(fixture.getPath('index.mjs'));
+
+		onTestFail(() => {
+			console.log(testProcess);
+		});
+
+		expect(testProcess.exitCode).toBe(1);
+		expect(testProcess.stderr).toMatch('Timeout: 100ms');
+		// Verify parent's timeout propagated to child suite across module boundary
+		expect(testProcess.stdout).toMatch('EXTERNAL_STARTED');
+		expect(testProcess.stdout).toMatch('1 failed');
+	});
 });

@@ -11,7 +11,8 @@ export default testSuite('reporting', ({ test }) => {
 
 			(async () => {
 				test('incomplete test', async () => {
-					await setTimeout(1000);
+					// Hang forever - will be interrupted by process.exit
+					await new Promise(() => {});
 				});
 
 				await setTimeout(10);
@@ -40,11 +41,13 @@ export default testSuite('reporting', ({ test }) => {
 
 			(async () => {
 				test('pending 1', async () => {
-					await setTimeout(1000);
+					// Hang forever - will be interrupted by process.exit
+					await new Promise(() => {});
 				});
 
 				test('pending 2', async () => {
-					await setTimeout(1000);
+					// Hang forever - will be interrupted by process.exit
+					await new Promise(() => {});
 				});
 
 				await setTimeout(10);

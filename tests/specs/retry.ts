@@ -54,7 +54,6 @@ export default testSuite('retry', ({ test }) => {
 	test('retry with timeout interaction', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { setTimeout } from 'node:timers/promises';
 			import { describe } from 'manten';
 
 			describe('retry with timeout', ({ test }) => {
@@ -64,11 +63,10 @@ export default testSuite('retry', ({ test }) => {
 					attempt += 1;
 
 					if (attempt < 3) {
-						// First two attempts: timeout
-						await setTimeout(100);
+						// First two attempts: hang forever to force timeout
+						await new Promise(() => {});
 					}
-					// Third attempt: complete quickly
-					await setTimeout(5);
+					// Third attempt: complete immediately
 				}, {
 					retry: 3,
 					timeout: 50,

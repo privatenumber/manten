@@ -122,13 +122,13 @@ export default testSuite('parallel', ({ describe }) => {
 
 					test('Test 2', async () => {
 						console.log('Test 2 start');
-						await setTimeout(100);
+						await setTimeout(300);
 						console.log('Test 2 end');
 					});
 
 					test('Test 3', async () => {
 						console.log('Test 3 start');
-						await setTimeout(150);
+						await setTimeout(600);
 						console.log('Test 3 end');
 					});
 				}, { parallel: true });
@@ -515,7 +515,7 @@ export default testSuite('parallel', ({ describe }) => {
 				export default testSuite('Suite A', ({ test }) => {
 					test('A1', async () => {
 						console.log('A1 start');
-						await setTimeout(100);
+						await setTimeout(200);
 						console.log('A1 end');
 					});
 				});
@@ -527,7 +527,7 @@ export default testSuite('parallel', ({ describe }) => {
 				export default testSuite('Suite B', ({ test }) => {
 					test('B1', async () => {
 						console.log('B1 start');
-						await setTimeout(100);
+						await setTimeout(200);
 						console.log('B1 end');
 					});
 				});
@@ -539,7 +539,7 @@ export default testSuite('parallel', ({ describe }) => {
 				export default testSuite('Suite C', ({ test }) => {
 					test('C1', async () => {
 						console.log('C1 start');
-						await setTimeout(100);
+						await setTimeout(200);
 						console.log('C1 end');
 					});
 				});
@@ -564,14 +564,23 @@ export default testSuite('parallel', ({ describe }) => {
 
 			expect(testProcess.exitCode).toBe(0);
 
-			// Only 2 suites run at a time: A+B start, then C starts after one completes
-			expectMatchInOrder(testProcess.stdout, [
-				'A1 start',
-				'B1 start',
-			]);
+			// Only 2 suites run at a time: A+B start (in any order), then C starts after one completes
+			expect(testProcess.stdout).toMatch('A1 start');
+			expect(testProcess.stdout).toMatch('B1 start');
 
-			// C starts after A or B completes
-			expect(testProcess.stdout).toMatch('C1 start');
+			// C starts after A or B completes - verify parallel limit works
+			const cStartIndex = testProcess.stdout.indexOf('C1 start');
+			const aEndIndex = testProcess.stdout.indexOf('A1 end');
+			const bEndIndex = testProcess.stdout.indexOf('B1 end');
+
+			// C must start AFTER (A ends OR B ends) to prove the parallel: 2 limit works
+			const slotOpened = (aEndIndex !== -1 && cStartIndex > aEndIndex)
+								|| (bEndIndex !== -1 && cStartIndex > bEndIndex);
+
+			if (!slotOpened) {
+				throw new Error('C started before a concurrency slot opened!');
+			}
+
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});

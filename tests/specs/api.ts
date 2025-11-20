@@ -18,7 +18,7 @@ export default testSuite('api', ({ test }) => {
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
 		expect(testProcess.exitCode).toBe(0);
-		expect(testProcess.stdout).toMatch('✔ should log\n');
+		expect(testProcess.stdout).toMatch('✔ should log');
 		expect(testProcess.stdout).toMatch('1 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
 	});

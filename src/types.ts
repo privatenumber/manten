@@ -22,12 +22,15 @@ export type Test = (
 	},
 ) => Promise<void>;
 
+export type DescribeOptions = {
+	parallel?: boolean | number | 'auto';
+	timeout?: number;
+};
+
 export type Describe = (
 	description: string,
 	callback: ContextCallback,
-	options?: {
-		parallel?: boolean | number | 'auto';
-	},
+	options?: DescribeOptions,
 ) => Promise<void>;
 
 export type TestMeta = {

@@ -35,7 +35,6 @@ export default testSuite('abort signal', ({ test }) => {
 	test('signal aborted on timeout', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { setTimeout } from 'node:timers/promises';
 			import { describe } from 'manten';
 
 			describe('abort signal', ({ test }) => {
@@ -45,7 +44,8 @@ export default testSuite('abort signal', ({ test }) => {
 						aborted = true;
 					});
 
-					await setTimeout(100);
+					// Hang forever - only way out is timeout
+					await new Promise(() => {});
 
 					if (!aborted) {
 						throw new Error('signal was not aborted');
@@ -82,7 +82,7 @@ export default testSuite('abort signal', ({ test }) => {
 					});
 
 					try {
-						await setTimeout(100);
+						await setTimeout(1000, null, { signal });
 					} finally {
 						// Write cleanup status to stdout for verification
 						console.log('CLEANUP:', cleaned);
@@ -108,7 +108,6 @@ export default testSuite('abort signal', ({ test }) => {
 	test('signal not aborted when test completes', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { setTimeout } from 'node:timers/promises';
 			import { describe } from 'manten';
 
 			describe('abort signal', ({ test }) => {
@@ -118,7 +117,8 @@ export default testSuite('abort signal', ({ test }) => {
 						aborted = true;
 					});
 
-					await setTimeout(50);
+					// Complete immediately - well within timeout
+					await new Promise(resolve => setImmediate(resolve));
 
 					if (aborted) {
 						throw new Error('signal should not be aborted');
@@ -169,7 +169,8 @@ export default testSuite('abort signal', ({ test }) => {
 					}
 
 					if (attempt < 2) {
-						await setTimeout(100);
+						// Hang forever - forces timeout to kill first attempt
+						await new Promise(() => {});
 					}
 				}, {
 					retry: 2,
@@ -242,8 +243,8 @@ export default testSuite('abort signal', ({ test }) => {
 						console.log('CLEANUP_VERIFIED: true');
 					});
 
-					// Test passes quickly
-					await setTimeout(50);
+					// Test passes immediately
+					await new Promise(resolve => setImmediate(resolve));
 				}, { timeout: 1000 });
 			});
 			`,
@@ -264,7 +265,6 @@ export default testSuite('abort signal', ({ test }) => {
 	test('abort reason contains timeout error', async ({ onTestFail }) => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { setTimeout } from 'node:timers/promises';
 			import { describe } from 'manten';
 
 			describe('abort signal', ({ test }) => {
@@ -274,7 +274,8 @@ export default testSuite('abort signal', ({ test }) => {
 						console.log('ABORT_REASON:', signal.reason?.message || 'undefined');
 					});
 
-					await setTimeout(100);
+					// Hang forever - only way out is timeout
+					await new Promise(() => {});
 				}, { timeout: 50 });
 			});
 			`,

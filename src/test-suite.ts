@@ -3,6 +3,7 @@ import {
 	type Context,
 	type ContextApi,
 } from './context.js';
+import type { DescribeOptions } from './types.js';
 
 const defaultContext = createContext();
 
@@ -37,9 +38,7 @@ type TestSuiteFunction = {
 	<Callback extends TestSuiteCallback>(
 		name: string,
 		callback: Callback,
-		options?: {
-			parallel?: boolean | number | 'auto';
-		},
+		options?: DescribeOptions,
 	): TestSuite<Callback>;
 
 	<Callback extends TestSuiteCallback>(
@@ -50,9 +49,7 @@ type TestSuiteFunction = {
 export const testSuite: TestSuiteFunction = <Callback extends TestSuiteCallback>(
 	nameOrCallback: string | Callback,
 	maybeCallback?: Callback,
-	maybeOptions?: {
-		parallel?: boolean | number | 'auto';
-	},
+	maybeOptions?: DescribeOptions,
 ): TestSuite<Callback> => {
 	const name = typeof nameOrCallback === 'string' ? nameOrCallback : undefined;
 	const callback = typeof nameOrCallback === 'string' ? maybeCallback! : nameOrCallback;

@@ -1,3 +1,4 @@
+import { setMaxListeners } from 'node:events';
 import type {
 	Describe,
 	Test,
@@ -14,6 +15,7 @@ import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
 import { unwrapModule, type ModuleDefaultExport } from './utils/unwrap-module.js';
 import { createSemaphore } from './utils/semaphore.js';
+import { timeLimitFunction } from './utils/timer.js';
 
 export type ContextCallback = (api: ContextApi) => void;
 
@@ -27,6 +29,7 @@ export type RunTestSuite = <
 ) => InferCallback<SuiteCallback>['returnType'];
 
 export type ContextApi = {
+	signal: AbortSignal;
 	describe: Describe;
 	test: Test;
 	runTestSuite: RunTestSuite;
@@ -44,6 +47,8 @@ export type Context = {
 		setLimit: (newLimit: number) => void;
 		cleanup: () => void;
 	};
+	abortController: AbortController;
+	timeout?: number;
 	run: (
 		callback: ContextCallback,
 		parentContext?: Context,
@@ -53,6 +58,7 @@ export type Context = {
 export type CreateContext = (
 	description?: string,
 	parallel?: boolean | number | 'auto',
+	timeout?: number,
 ) => Context;
 
 export const createDescribe = (
@@ -68,7 +74,7 @@ export const createDescribe = (
 			description = `${prefix} ${description}`;
 		}
 
-		const context = createContext(description, options?.parallel);
+		const context = createContext(description, options?.parallel, options?.timeout);
 
 		const executeDescribe = async () => {
 			// Check if parent has concurrency limiter
@@ -124,6 +130,7 @@ const topLevelRunTestSuite = createRunTestSuite();
 export const createContext: CreateContext = (
 	description?: string,
 	parallel?: boolean | number | 'auto',
+	timeout?: number,
 ): Context => {
 	let concurrencyLimiter: Context['concurrencyLimiter'];
 
@@ -143,16 +150,40 @@ export const createContext: CreateContext = (
 		}
 	}
 
+	const abortController = new AbortController();
+
+	// Allow unlimited listeners to prevent MaxListenersExceededWarning
+	// when many tests attach to the parent signal for cleanup
+	setMaxListeners(0, abortController.signal);
+
 	const context = {
 		pendingTests: [],
 		callbacks: {
 			onFinish: [],
 		},
 		concurrencyLimiter,
+		abortController,
+		timeout,
 		run: async (
 			callback: ContextCallback,
 			parentContext?: Context,
 		) => {
+			// Listen to parent abort signal
+			let handleParentAbort: (() => void) | undefined;
+			if (parentContext) {
+				handleParentAbort = () => {
+					if (!abortController.signal.aborted) {
+						abortController.abort(parentContext.abortController.signal.reason);
+					}
+				};
+				parentContext.abortController.signal.addEventListener('abort', handleParentAbort);
+
+				// Check if parent already aborted (missed the event)
+				if (parentContext.abortController.signal.aborted) {
+					handleParentAbort();
+				}
+			}
+
 			try {
 				const inProgress = (async () => {
 					await callback(context.api);
@@ -163,11 +194,22 @@ export const createContext: CreateContext = (
 					parentContext.pendingTests.push(inProgress);
 				}
 
-				await inProgress;
+				// Apply timeout if specified
+				await timeLimitFunction(inProgress, timeout, abortController);
 			} catch (error) {
 				consoleError(error);
 				process.exitCode = 1;
 			} finally {
+				// Clean up parent listener to prevent memory leak
+				if (parentContext && handleParentAbort) {
+					parentContext.abortController.signal.removeEventListener('abort', handleParentAbort);
+				}
+
+				// Abort controller if not already aborted
+				if (!abortController.signal.aborted) {
+					abortController.abort();
+				}
+
 				// Clean up auto interval if it exists
 				if (concurrencyLimiter) {
 					concurrencyLimiter.cleanup();
@@ -186,6 +228,7 @@ export const createContext: CreateContext = (
 	} as unknown as Context;
 
 	context.api = {
+		signal: abortController.signal,
 		test: (
 			description
 				? createTest(
