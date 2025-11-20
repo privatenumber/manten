@@ -15,6 +15,14 @@ import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
 
+// Custom error class for skipping tests
+class SkipError extends Error {
+	constructor(reason?: string) {
+		super(reason || 'Test skipped');
+		this.name = 'SkipError';
+	}
+}
+
 // Remove "jest assertion error" matcherResult object
 const patchJestAssertionError = (error: unknown) => {
 	if (
@@ -54,29 +62,31 @@ const runTest = async (
 				testMeta.attempt = attempt;
 				testMeta.startTime = Date.now();
 				try {
-					const result = await timeLimitFunction(
+					await timeLimitFunction(
 						testFunction({
 							onTestFail: testFail.addHook,
 							onTestFinish: testFinish.addHook,
+							skip: (reason?: string) => {
+								throw new SkipError(reason);
+							},
 						}),
 						timeout,
 					);
-					if (result && typeof result === 'object' && 'skip' in result && (result as any).skip === true) {
+					logTestSuccess(testMeta);
+				} catch (error) {
+					if (error instanceof SkipError) {
 						testMeta.skip = true;
 						logTestSkip(testMeta);
 					} else {
-						logTestSuccess(testMeta);
+						// Probably can remove error property now
+						logTestFail(testMeta, patchJestAssertionError(error));
+						await handleError(error);
+						throw error;
 					}
-				} catch (error) {
-					// Probably can remove error property now
-					logTestFail(testMeta, patchJestAssertionError(error));
-					await handleError(error);
-					throw error;
 				} finally {
 					await testFinish.runHooks();
 					testMeta.endTime = Date.now();
 				}
-				logTestSuccess(testMeta);
 			},
 			testMeta.retry,
 		);

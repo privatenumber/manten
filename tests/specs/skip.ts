@@ -1,7 +1,13 @@
 import { test } from '#manten';
 
-test('should skip', () => {
-	return { skip: true };
+test('should skip', ({ skip }) => {
+	const someCondition = true;
+	if (someCondition) {
+		skip('reason why');
+	}
+
+	// This should not run
+	throw new Error('This should not execute');
 });
 
 test('should pass', () => {

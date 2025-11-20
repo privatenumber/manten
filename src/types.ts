@@ -8,9 +8,10 @@ export type onTestFailCallback = (error: unknown) => void;
 export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
+	skip: (reason?: string) => never;
 };
 
-type TestFunction = (api: TestApi) => (void | {skip: true}) | Promise<void | {skip: true}>;
+type TestFunction = (api: TestApi) => void | Promise<void>;
 
 export type Test = (
 	title: string,
