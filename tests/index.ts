@@ -13,24 +13,5 @@ describe('manten', ({ runTestSuite }) => {
 	runTestSuite(import('./specs/reporting.js'));
 	runTestSuite(import('./specs/retry.js'));
 	runTestSuite(import('./specs/test-suites.js'));
-});
-
-test('skip', async ({ onTestFail }) => {
-	const testProcess = await execaNode('./tests/specs/skip', {
-		env,
-		all: true,
-		reject: false,
-	});
-
-	onTestFail(() => {
-		console.log(testProcess);
-	});
-
-	expect(testProcess.all).toMatch('○ should skip');
-	expect(testProcess.all).toMatch('✔ should pass');
-	expect(testProcess.all).toMatch('✖ should fail');
-
-	expect(testProcess.stdout).toMatch('1 passed');
-	expect(testProcess.stdout).toMatch('1 failed');
-	expect(testProcess.stdout).toMatch('1 skipped');
+	runTestSuite(import('./specs/skip.js'));
 });
