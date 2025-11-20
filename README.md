@@ -312,6 +312,8 @@ describe('Database tests', ({ test }) => {
 
 The limit applies to **immediate children only** (direct `test()` and `describe()` calls). Nested describes have independent limits.
 
+**Note on `parallel: 'auto'`:** This feature uses `os.loadavg()` to monitor system load, which is only available on Unix-like systems (macOS, Linux). On Windows, `loadavg()` always returns `[0, 0, 0]`, so `'auto'` behaves identically to setting `parallel` to the number of CPU cores (no dynamic throttling).
+
 #### Explicit await bypasses parallel limiting
 
 Tests that you explicitly `await` run immediately, bypassing the parallel queue:

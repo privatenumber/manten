@@ -92,6 +92,10 @@ const calculateAutoLimit = (): number => {
 	const cpuCount = os.cpus().length;
 	const loadAverage = os.loadavg()[0]; // 1-minute average
 
+	// Note: os.loadavg() always returns [0, 0, 0] on Windows
+	// This causes the formula to effectively return cpuCount (no dynamic throttling)
+	// On Unix systems (macOS, Linux), load average is reported correctly
+
 	// Reduce concurrency proportionally to CPU load (0-80% reduction)
 	// Formula: cpuCount * (1 - min(load/cpuCount, 0.8))
 	const concurrency = Math.max(
