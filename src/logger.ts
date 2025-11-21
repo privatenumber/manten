@@ -45,11 +45,11 @@ const indentMultiline = (
 	string: string,
 ) => string.replaceAll(/^/gm, indent);
 
-const getTestTitle = (testMeta: TestMeta) => {
+const getTestTitle = (testMeta: TestMeta, includeRetryCounter = true) => {
 	const { title, attempt, retry } = testMeta;
 	let message = `${title + prettyDuration(testMeta)}`;
 
-	if (retry > 1) {
+	if (includeRetryCounter && retry > 1) {
 		message += dim(` (${attempt}/${retry})`);
 	}
 
@@ -75,7 +75,7 @@ export const logTestSuccess = (testMeta: TestMeta) => {
 };
 
 export const logTestSkip = (testMeta: TestMeta) => {
-	consoleLog(`${skipIcon} ${getTestTitle(testMeta)}`);
+	consoleLog(`${formatTimestamp()} ${skipIcon} ${getTestTitle(testMeta, false)}`);
 };
 
 export const logReport = (allTests: TestMeta[]) => {

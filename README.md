@@ -402,10 +402,13 @@ describe('Group', ({ runTestSuite }) => {
 Tests receive an API object with hooks for debugging and cleanup:
 
 ```ts
-test('example', async ({ signal, onTestFail, onTestFinish }) => {
+test('example', async ({
+    signal, onTestFail, onTestFinish, skip
+}) => {
     // signal: AbortSignal - see "Timeouts & Cleanup" section above
     // onTestFail: Debug hook when test fails
     // onTestFinish: Cleanup hook after test completes
+    // skip: Function to skip the test - see "Skipping tests" section below
 })
 ```
 
@@ -453,6 +456,46 @@ describe('Describe', ({ test, onFinish }) => {
     test('Check fixture', () => {
         // ...
     })
+})
+```
+
+### Skipping tests
+
+Skip tests dynamically by calling `skip()` from within the test. This is useful when a test should be skipped based on runtime conditions (environment variables, system capabilities, etc.).
+
+```ts
+test('platform-specific feature', ({ skip }) => {
+    if (process.platform !== 'linux') {
+        skip('Only runs on Linux')
+    }
+
+    // Test code for Linux-specific feature
+    expect(linuxOnlyFeature()).toBe(true)
+})
+```
+
+When a test is skipped:
+- It's logged with a `○` symbol and counted separately in the summary
+- Exit code is unaffected (skips don't cause failures)
+- Hooks (`onTestFail`, `onTestFinish`) still run normally
+- Retry mechanism is bypassed (skipped tests are never retried)
+- Timeouts don't apply (skipping is immediate)
+
+```
+✔ Test A
+○ platform-specific feature
+✔ Test B
+
+2 passed
+1 skipped
+```
+
+The `skip()` function throws internally to stop execution, so any code after it won't run:
+
+```ts
+test('example', ({ skip }) => {
+    skip('reason')
+    console.log('This will never execute')
 })
 ```
 
