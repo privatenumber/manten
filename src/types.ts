@@ -44,4 +44,5 @@ export type TestMeta = {
 	endTime?: number;
 	error?: unknown;
 	skip?: boolean;
+	skipReason?: string;
 };

@@ -505,10 +505,10 @@ If you allocate resources before skipping, use `onTestFinish` to clean them up:
 ```ts
 test('conditional test', async ({ skip, onTestFinish }) => {
     const tempFile = await createTempFile()
-    onTestFinish(() => tempFile.cleanup())  // Always runs, even if skipped
+    onTestFinish(() => tempFile.cleanup()) // Always runs, even if skipped
 
     if (!featureEnabled) {
-        skip('Feature disabled')  // tempFile still gets cleaned up
+        skip('Feature disabled') // tempFile still gets cleaned up
     }
 
     // Test code using tempFile...

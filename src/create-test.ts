@@ -138,7 +138,7 @@ export const createTest = (
 	prefix?: string,
 	parentContext?: Context,
 ): Test => (
-	async (
+	(
 		title,
 		testFunction,
 		timeoutOrOptions,
@@ -147,8 +147,14 @@ export const createTest = (
 			title = `${prefix} ${title}`;
 		}
 
+		// Mark parent as having started tests (SYNCHRONOUSLY)
+		// This ensures structural validity regardless of filtering
+		if (parentContext) {
+			parentContext.testsStarted = true;
+		}
+
 		if (onlyRunTests && !title.includes(onlyRunTests)) {
-			return;
+			return Promise.resolve();
 		}
 
 		const testMeta: TestMeta = {
@@ -170,27 +176,40 @@ export const createTest = (
 
 		allTests.push(testMeta);
 
-		const executeTest = async () => {
-			// Check if parent has concurrency limiter
-			if (parentContext?.concurrencyLimiter) {
-				// Acquire slot
-				const release = await parentContext.concurrencyLimiter.acquire();
-				try {
-					await runTest(testMeta, parentContext);
-				} finally {
-					release();
-				}
-			} else {
-				await runTest(testMeta, parentContext);
-			}
-		};
-
-		const testRunning = executeTest();
-
-		if (parentContext) {
-			parentContext.pendingTests.push(testRunning);
+		// Check if parent describe is skipped
+		if (parentContext?.skipped) {
+			testMeta.skip = true;
+			testMeta.skipReason = parentContext.skipReason;
+			testMeta.startTime = Date.now();
+			testMeta.endTime = Date.now();
+			logTestSkip(testMeta);
+			return Promise.resolve();
 		}
 
-		await testRunning;
+		// Return async execution
+		return (async () => {
+			const executeTest = async () => {
+				// Check if parent has concurrency limiter
+				if (parentContext?.concurrencyLimiter) {
+					// Acquire slot
+					const release = await parentContext.concurrencyLimiter.acquire();
+					try {
+						await runTest(testMeta, parentContext);
+					} finally {
+						release();
+					}
+				} else {
+					await runTest(testMeta, parentContext);
+				}
+			};
+
+			const testRunning = executeTest();
+
+			if (parentContext) {
+				parentContext.pendingTests.push(testRunning);
+			}
+
+			await testRunning;
+		})();
 	}
 );
