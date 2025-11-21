@@ -477,7 +477,8 @@ test('platform-specific feature', ({ skip }) => {
 When a test is skipped:
 - It's logged with a `○` symbol and counted separately in the summary
 - Exit code is unaffected (skips don't cause failures)
-- Hooks (`onTestFail`, `onTestFinish`) still run normally
+- `onTestFinish` hooks still run (allowing cleanup of resources allocated before `skip()` was called)
+- `onTestFail` hooks do not run (the test didn't fail)
 - Retry mechanism is bypassed (skipped tests are never retried)
 - Timeouts don't apply (skipping is immediate)
 
@@ -496,6 +497,21 @@ The `skip()` function throws internally to stop execution, so any code after it 
 test('example', ({ skip }) => {
     skip('reason')
     console.log('This will never execute')
+})
+```
+
+If you allocate resources before skipping, use `onTestFinish` to clean them up:
+
+```ts
+test('conditional test', async ({ skip, onTestFinish }) => {
+    const tempFile = await createTempFile()
+    onTestFinish(() => tempFile.cleanup())  // Always runs, even if skipped
+
+    if (!featureEnabled) {
+        skip('Feature disabled')  // tempFile still gets cleaned up
+    }
+
+    // Test code using tempFile...
 })
 ```
 
