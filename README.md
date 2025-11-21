@@ -515,6 +515,70 @@ test('conditional test', async ({ skip, onTestFinish }) => {
 })
 ```
 
+#### Skipping describe groups
+
+Skip entire test groups by calling `skip()` in the describe callback:
+
+```ts
+describe('GPU tests', ({ test, skip }) => {
+    if (!hasGPU) {
+        skip('GPU not available')
+    }
+
+    test('render shader', () => { ... })     // All skipped
+    test('compute pipeline', () => { ... })  // All skipped
+    test('texture sampling', () => { ... })  // All skipped
+})
+```
+
+All tests in the group will be marked as skipped and appear in the report:
+
+```
+○ GPU tests › render shader
+○ GPU tests › compute pipeline
+○ GPU tests › texture sampling
+
+0 passed
+3 skipped
+```
+
+**Important:** `skip()` must be called before any tests or nested describes run:
+
+```ts
+describe('Invalid', ({ test, skip }) => {
+    test('runs first', () => { ... })  // ✅ Executes
+
+    skip('Too late!')  // ❌ Throws error
+})
+```
+
+The describe callback continues executing after `skip()` is called (unlike test skip, which throws). This allows all tests to register for visibility in the report:
+
+```ts
+describe('Feature tests', ({ test, skip }) => {
+    if (!featureEnabled) {
+        skip('Feature disabled')
+        // Callback continues - tests below still register
+    }
+
+    test('test 1', () => { ... })  // Registers as skipped
+    test('test 2', () => { ... })  // Registers as skipped
+})
+```
+
+Nested describes inherit the skip state from their parent:
+
+```ts
+describe('Graphics', ({ describe, skip }) => {
+    skip('No GPU available')
+
+    describe('2D', ({ test }) => {
+        test('canvas', () => { ... })  // Skipped (parent skipped)
+        test('svg', () => { ... })     // Skipped (parent skipped)
+    })
+})
+```
+
 ### Running a specific test
 
 To run a specific test, use the `TESTONLY` environment variable with a substring of the test's name. This is useful for debugging a single test in isolation without running the entire suite.

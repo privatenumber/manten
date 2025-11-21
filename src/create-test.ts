@@ -180,8 +180,9 @@ export const createTest = (
 		if (parentContext?.skipped) {
 			testMeta.skip = true;
 			testMeta.skipReason = parentContext.skipReason;
-			testMeta.startTime = Date.now();
-			testMeta.endTime = Date.now();
+			const now = Date.now();
+			testMeta.startTime = now;
+			testMeta.endTime = now;
 			logTestSkip(testMeta);
 			return Promise.resolve();
 		}
