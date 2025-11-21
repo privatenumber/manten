@@ -525,9 +525,9 @@ describe('GPU tests', ({ test, skip }) => {
         skip('GPU not available')
     }
 
-    test('render shader', () => { ... })     // All skipped
-    test('compute pipeline', () => { ... })  // All skipped
-    test('texture sampling', () => { ... })  // All skipped
+    test('render shader', () => { /* ... */ }) // All skipped
+    test('compute pipeline', () => { /* ... */ }) // All skipped
+    test('texture sampling', () => { /* ... */ }) // All skipped
 })
 ```
 
@@ -546,9 +546,9 @@ All tests in the group will be marked as skipped and appear in the report:
 
 ```ts
 describe('Invalid', ({ test, skip }) => {
-    test('runs first', () => { ... })  // ✅ Executes
+    test('runs first', () => { /* ... */ }) // ✅ Executes
 
-    skip('Too late!')  // ❌ Throws error
+    skip('Too late!') // ❌ Throws error
 })
 ```
 
@@ -561,8 +561,8 @@ describe('Feature tests', ({ test, skip }) => {
         // Callback continues - tests below still register
     }
 
-    test('test 1', () => { ... })  // Registers as skipped
-    test('test 2', () => { ... })  // Registers as skipped
+    test('test 1', () => { /* ... */ }) // Registers as skipped
+    test('test 2', () => { /* ... */ }) // Registers as skipped
 })
 ```
 
@@ -573,8 +573,8 @@ describe('Graphics', ({ describe, skip }) => {
     skip('No GPU available')
 
     describe('2D', ({ test }) => {
-        test('canvas', () => { ... })  // Skipped (parent skipped)
-        test('svg', () => { ... })     // Skipped (parent skipped)
+        test('canvas', () => { /* ... */ }) // Skipped (parent skipped)
+        test('svg', () => { /* ... */ }) // Skipped (parent skipped)
     })
 })
 ```
