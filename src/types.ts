@@ -9,6 +9,7 @@ export type TestApi = {
 	signal: AbortSignal;
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
+	skip: (reason?: string) => never;
 };
 
 type TestFunction = (api: TestApi) => void | Promise<void>;
@@ -42,4 +43,6 @@ export type TestMeta = {
 	startTime?: number;
 	endTime?: number;
 	error?: unknown;
+	skip?: boolean;
+	skipReason?: string;
 };

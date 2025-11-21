@@ -13,4 +13,5 @@ describe('manten', ({ runTestSuite }) => {
 	runTestSuite(import('./specs/reporting.js'));
 	runTestSuite(import('./specs/retry.js'));
 	runTestSuite(import('./specs/test-suites.js'));
+	runTestSuite(import('./specs/skip.js'));
 });

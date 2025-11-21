@@ -7,12 +7,21 @@ import type {
 import {
 	logTestSuccess,
 	logTestFail,
+	logTestSkip,
 	logReport,
 } from './logger.js';
 import type { Context } from './context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
+
+// Custom error class for skipping tests
+class SkipError extends Error {
+	constructor(reason?: string) {
+		super(reason || 'Test skipped');
+		this.name = 'SkipError';
+	}
+}
 
 // Remove "jest assertion error" matcherResult object
 const patchJestAssertionError = (error: unknown) => {
@@ -78,15 +87,24 @@ const runTest = async (
 							signal: abortController.signal,
 							onTestFail: testFail.addHook,
 							onTestFinish: testFinish.addHook,
+							skip: (reason?: string) => {
+								throw new SkipError(reason);
+							},
 						}),
 						timeout,
 						abortController,
 					);
+					logTestSuccess(testMeta);
 				} catch (error) {
-					// Probably can remove error property now
-					logTestFail(testMeta, patchJestAssertionError(error));
-					await handleError(error);
-					throw error;
+					if (error instanceof SkipError) {
+						testMeta.skip = true;
+						logTestSkip(testMeta);
+					} else {
+						// Probably can remove error property now
+						logTestFail(testMeta, patchJestAssertionError(error));
+						await handleError(error);
+						throw error;
+					}
 				} finally {
 					// Clean up parent listener to prevent memory leak
 					if (parentContext && handleParentAbort) {
@@ -99,7 +117,6 @@ const runTest = async (
 					await testFinish.runHooks();
 					testMeta.endTime = Date.now();
 				}
-				logTestSuccess(testMeta);
 			},
 			testMeta.retry,
 		);
@@ -121,7 +138,7 @@ export const createTest = (
 	prefix?: string,
 	parentContext?: Context,
 ): Test => (
-	async (
+	(
 		title,
 		testFunction,
 		timeoutOrOptions,
@@ -130,8 +147,14 @@ export const createTest = (
 			title = `${prefix} ${title}`;
 		}
 
+		// Mark parent as having started tests (SYNCHRONOUSLY)
+		// This ensures structural validity regardless of filtering
+		if (parentContext) {
+			parentContext.testsStarted = true;
+		}
+
 		if (onlyRunTests && !title.includes(onlyRunTests)) {
-			return;
+			return Promise.resolve();
 		}
 
 		const testMeta: TestMeta = {
@@ -153,27 +176,41 @@ export const createTest = (
 
 		allTests.push(testMeta);
 
-		const executeTest = async () => {
-			// Check if parent has concurrency limiter
-			if (parentContext?.concurrencyLimiter) {
-				// Acquire slot
-				const release = await parentContext.concurrencyLimiter.acquire();
-				try {
-					await runTest(testMeta, parentContext);
-				} finally {
-					release();
-				}
-			} else {
-				await runTest(testMeta, parentContext);
-			}
-		};
-
-		const testRunning = executeTest();
-
-		if (parentContext) {
-			parentContext.pendingTests.push(testRunning);
+		// Check if parent describe is skipped
+		if (parentContext?.skipped) {
+			testMeta.skip = true;
+			testMeta.skipReason = parentContext.skipReason;
+			const now = Date.now();
+			testMeta.startTime = now;
+			testMeta.endTime = now;
+			logTestSkip(testMeta);
+			return Promise.resolve();
 		}
 
-		await testRunning;
+		// Return async execution
+		return (async () => {
+			const executeTest = async () => {
+				// Check if parent has concurrency limiter
+				if (parentContext?.concurrencyLimiter) {
+					// Acquire slot
+					const release = await parentContext.concurrencyLimiter.acquire();
+					try {
+						await runTest(testMeta, parentContext);
+					} finally {
+						release();
+					}
+				} else {
+					await runTest(testMeta, parentContext);
+				}
+			};
+
+			const testRunning = executeTest();
+
+			if (parentContext) {
+				parentContext.pendingTests.push(testRunning);
+			}
+
+			await testRunning;
+		})();
 	}
 );

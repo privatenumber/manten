@@ -16,6 +16,7 @@ export const {
 const successIcon = green('✔');
 const failureIcon = red('✖');
 const inProgressIcon = yellow('•');
+const skipIcon = dim('○');
 
 const formatTimestamp = () => {
 	const now = new Date();
@@ -44,11 +45,11 @@ const indentMultiline = (
 	string: string,
 ) => string.replaceAll(/^/gm, indent);
 
-const getTestTitle = (testMeta: TestMeta) => {
+const getTestTitle = (testMeta: TestMeta, includeRetryCounter = true) => {
 	const { title, attempt, retry } = testMeta;
 	let message = `${title + prettyDuration(testMeta)}`;
 
-	if (retry > 1) {
+	if (includeRetryCounter && retry > 1) {
 		message += dim(` (${attempt}/${retry})`);
 	}
 
@@ -73,6 +74,10 @@ export const logTestSuccess = (testMeta: TestMeta) => {
 	consoleLog(`${formatTimestamp()} ${successIcon} ${getTestTitle(testMeta)}`);
 };
 
+export const logTestSkip = (testMeta: TestMeta) => {
+	consoleLog(`${formatTimestamp()} ${skipIcon} ${getTestTitle(testMeta, false)}`);
+};
+
 export const logReport = (allTests: TestMeta[]) => {
 	if (allTests.length === 0) {
 		return;
@@ -81,6 +86,7 @@ export const logReport = (allTests: TestMeta[]) => {
 	const unfinishedTests: TestMeta[] = [];
 	let passingTests = 0;
 	let failedTests = 0;
+	let skippedTests = 0;
 	let firstStartTime: number | undefined;
 	let lastEndTime: number | undefined;
 
@@ -101,6 +107,8 @@ export const logReport = (allTests: TestMeta[]) => {
 
 			if (test.error) {
 				failedTests += 1;
+			} else if (test.skip) {
+				skippedTests += 1;
 			} else {
 				passingTests += 1;
 			}
@@ -125,6 +133,11 @@ export const logReport = (allTests: TestMeta[]) => {
 	// Failed
 	if (failedTests > 0) {
 		output += newline + red(`${failedTests.toLocaleString()} failed`);
+	}
+
+	// Skipped
+	if (skippedTests > 0) {
+		output += newline + dim(`${skippedTests.toLocaleString()} skipped`);
 	}
 
 	// Pending

@@ -402,10 +402,13 @@ describe('Group', ({ runTestSuite }) => {
 Tests receive an API object with hooks for debugging and cleanup:
 
 ```ts
-test('example', async ({ signal, onTestFail, onTestFinish }) => {
+test('example', async ({
+    signal, onTestFail, onTestFinish, skip
+}) => {
     // signal: AbortSignal - see "Timeouts & Cleanup" section above
     // onTestFail: Debug hook when test fails
     // onTestFinish: Cleanup hook after test completes
+    // skip: Function to skip the test - see "Skipping tests" section below
 })
 ```
 
@@ -452,6 +455,126 @@ describe('Describe', ({ test, onFinish }) => {
 
     test('Check fixture', () => {
         // ...
+    })
+})
+```
+
+### Skipping tests
+
+Skip tests dynamically by calling `skip()` from within the test. This is useful when a test should be skipped based on runtime conditions (environment variables, system capabilities, etc.).
+
+```ts
+test('platform-specific feature', ({ skip }) => {
+    if (process.platform !== 'linux') {
+        skip('Only runs on Linux')
+    }
+
+    // Test code for Linux-specific feature
+    expect(linuxOnlyFeature()).toBe(true)
+})
+```
+
+When a test is skipped:
+- It's logged with a `○` symbol and counted separately in the summary
+- Exit code is unaffected (skips don't cause failures)
+- `onTestFinish` hooks still run (allowing cleanup of resources allocated before `skip()` was called)
+- `onTestFail` hooks do not run (the test didn't fail)
+- Retry mechanism is bypassed (skipped tests are never retried)
+- Timeouts don't apply (skipping is immediate)
+
+```
+✔ Test A
+○ platform-specific feature
+✔ Test B
+
+2 passed
+1 skipped
+```
+
+The `skip()` function throws internally to stop execution, so any code after it won't run:
+
+```ts
+test('example', ({ skip }) => {
+    skip('reason')
+    console.log('This will never execute')
+})
+```
+
+If you allocate resources before skipping, use `onTestFinish` to clean them up:
+
+```ts
+test('conditional test', async ({ skip, onTestFinish }) => {
+    const tempFile = await createTempFile()
+    onTestFinish(() => tempFile.cleanup()) // Always runs, even if skipped
+
+    if (!featureEnabled) {
+        skip('Feature disabled') // tempFile still gets cleaned up
+    }
+
+    // Test code using tempFile...
+})
+```
+
+#### Skipping describe groups
+
+Skip entire test groups by calling `skip()` in the describe callback:
+
+```ts
+describe('GPU tests', ({ test, skip }) => {
+    if (!hasGPU) {
+        skip('GPU not available')
+    }
+
+    test('render shader', () => { /* ... */ }) // All skipped
+    test('compute pipeline', () => { /* ... */ }) // All skipped
+    test('texture sampling', () => { /* ... */ }) // All skipped
+})
+```
+
+All tests in the group will be marked as skipped and appear in the report:
+
+```
+○ GPU tests › render shader
+○ GPU tests › compute pipeline
+○ GPU tests › texture sampling
+
+0 passed
+3 skipped
+```
+
+**Important:** `skip()` must be called before any tests or nested describes run:
+
+```ts
+describe('Invalid', ({ test, skip }) => {
+    test('runs first', () => { /* ... */ }) // ✅ Executes
+
+    skip('Too late!') // ❌ Throws error
+})
+```
+
+The describe callback continues executing after `skip()` is called (unlike test skip, which throws). This allows all tests to register for visibility in the report:
+
+```ts
+describe('Feature tests', ({ test, skip }) => {
+    if (!featureEnabled) {
+        skip('Feature disabled')
+        // Callback continues - tests below still register
+    }
+
+    test('test 1', () => { /* ... */ }) // Registers as skipped
+    test('test 2', () => { /* ... */ }) // Registers as skipped
+})
+```
+
+Nested describes inherit the skip state from their parent:
+
+```ts
+describe('Graphics', ({ describe, skip }) => {
+    skip('No GPU available')
+
+    describe('2D', ({ test }) => {
+        test('canvas', () => { /* ... */ }) // Skipped (parent skipped)
+        test('svg', () => { /* ... */ }) // Skipped (parent skipped)
     })
 })
 ```

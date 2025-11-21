@@ -34,6 +34,7 @@ export type ContextApi = {
 	test: Test;
 	runTestSuite: RunTestSuite;
 	onFinish: onFinish;
+	skip: (reason?: string) => void;
 };
 
 export type Context = {
@@ -49,6 +50,9 @@ export type Context = {
 	};
 	abortController: AbortController;
 	timeout?: number;
+	skipped: boolean;
+	skipReason?: string;
+	testsStarted: boolean;
 	run: (
 		callback: ContextCallback,
 		parentContext?: Context,
@@ -65,7 +69,7 @@ export const createDescribe = (
 	prefix?: string,
 	parentContext?: Context,
 ): Describe => (
-	async (
+	(
 		description,
 		callback,
 		options,
@@ -74,24 +78,32 @@ export const createDescribe = (
 			description = `${prefix} ${description}`;
 		}
 
-		const context = createContext(description, options?.parallel, options?.timeout);
+		// Mark parent as having started tests/describes (SYNCHRONOUSLY)
+		if (parentContext) {
+			parentContext.testsStarted = true;
+		}
 
-		const executeDescribe = async () => {
-			// Check if parent has concurrency limiter
-			if (parentContext?.concurrencyLimiter) {
-				// Acquire slot
-				const release = await parentContext.concurrencyLimiter.acquire();
-				try {
+		// Return async execution
+		return (async () => {
+			const context = createContext(description, options?.parallel, options?.timeout);
+
+			const executeDescribe = async () => {
+				// Check if parent has concurrency limiter
+				if (parentContext?.concurrencyLimiter) {
+					// Acquire slot
+					const release = await parentContext.concurrencyLimiter.acquire();
+					try {
+						await context.run(callback, parentContext);
+					} finally {
+						release();
+					}
+				} else {
 					await context.run(callback, parentContext);
-				} finally {
-					release();
 				}
-			} else {
-				await context.run(callback, parentContext);
-			}
-		};
+			};
 
-		await executeDescribe();
+			await executeDescribe();
+		})();
 	}
 );
 
@@ -103,6 +115,11 @@ export const createRunTestSuite = (
 		testSuite,
 		...args
 	) => {
+		// Mark parent as having started tests/test suites (SYNCHRONOUSLY)
+		if (parentContext) {
+			parentContext.testsStarted = true;
+		}
+
 		const executeTestSuite = () => {
 			const context = createContext(prefix);
 			return context.run(async () => {
@@ -164,10 +181,19 @@ export const createContext: CreateContext = (
 		concurrencyLimiter,
 		abortController,
 		timeout,
+		skipped: false,
+		skipReason: undefined,
+		testsStarted: false,
 		run: async (
 			callback: ContextCallback,
 			parentContext?: Context,
 		) => {
+			// Inherit skip state from parent
+			if (parentContext?.skipped) {
+				context.skipped = true;
+				context.skipReason = parentContext.skipReason;
+			}
+
 			// Listen to parent abort signal
 			let handleParentAbort: (() => void) | undefined;
 			if (parentContext) {
@@ -255,6 +281,16 @@ export const createContext: CreateContext = (
 		),
 		onFinish: (callback) => {
 			context.callbacks.onFinish.push(callback);
+		},
+		skip: (reason?: string) => {
+			if (context.testsStarted) {
+				throw new Error(
+					'skip() must be called before any tests or nested describes run. '
+					+ 'Move skip() to the beginning of the describe callback.',
+				);
+			}
+			context.skipped = true;
+			context.skipReason = reason;
 		},
 	};
 
