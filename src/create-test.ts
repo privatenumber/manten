@@ -1,3 +1,4 @@
+import { dim } from 'kolorist';
 import type {
 	Test,
 	TestMeta,
@@ -133,6 +134,11 @@ process.on('exit', () => {
 });
 
 const onlyRunTests = process.env.TESTONLY;
+
+// Log TESTONLY filter immediately when set
+if (onlyRunTests) {
+	console.log(dim(`Only running tests that match: ${JSON.stringify(onlyRunTests)}\n`));
+}
 
 export const createTest = (
 	prefix?: string,
