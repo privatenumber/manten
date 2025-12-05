@@ -1,6 +1,5 @@
 import { createFixture } from 'fs-fixture';
-import { execaNode } from 'execa';
-import { installManten, node, env } from '../utils/spec-helpers.js';
+import { installManten, node } from '../utils/spec-helpers.js';
 import { testSuite, expect } from 'manten';
 
 export default testSuite('filtering', ({ test }) => {
@@ -203,20 +202,7 @@ export default testSuite('filtering', ({ test }) => {
 		});
 
 		// Run without inheriting TESTONLY from parent process
-		const testProcess = await execaNode(fixture.getPath('test.mjs'), {
-			env: {
-				// Keep essential env vars for node to work properly
-				PATH: process.env.PATH,
-				HOME: process.env.HOME,
-				USER: process.env.USER,
-				TMPDIR: process.env.TMPDIR,
-				// Add our custom env vars
-				...env,
-				// Explicitly exclude TESTONLY
-			},
-			extendEnv: false, // Don't inherit parent process env
-			reject: false,
-		});
+		const testProcess = await node(fixture.getPath('test.mjs'));
 
 		// Should not show filter message
 		expect(testProcess.stdout).not.toMatch('Only running tests that match');
@@ -240,7 +226,9 @@ export default testSuite('filtering', ({ test }) => {
 		});
 
 		const testProcess = await node(fixture.getPath('test.mjs'), {
-			env: { TESTONLY: '"quotes"' },
+			env: {
+				TESTONLY: '"quotes"',
+			},
 		});
 
 		expect(testProcess.stdout).toMatch(String.raw`Only running tests that match: "\"quotes\""`);
@@ -262,24 +250,21 @@ export default testSuite('filtering', ({ test }) => {
 		});
 
 		// Run with colors enabled to see ANSI codes
-		const testProcess = await execaNode(fixture.getPath('test.mjs'), {
+		const testProcess = await node(fixture.getPath('test.mjs'), {
 			env: {
 				TESTONLY: 'test',
 				FORCE_COLOR: '1',
-				// Essential env vars
-				PATH: process.env.PATH,
-				HOME: process.env.HOME,
-				USER: process.env.USER,
-				TMPDIR: process.env.TMPDIR,
+				NO_COLOR: undefined,
 			},
-			reject: false,
 		});
 
 		// Check that the filter message exists and has dim codes around it
 		expect(testProcess.stdout).toMatch('Only running tests that match');
-		// Check that dim ANSI codes exist in the output (either as \x1b or \u001b)
-		expect(testProcess.stdout.includes('\u001B[2m') || testProcess.stdout.includes('\u001B[2m')).toBe(true);
-		expect(testProcess.stdout.includes('\u001B[22m') || testProcess.stdout.includes('\u001B[22m')).toBe(true);
+		// Check that dim ANSI codes exist in the output (check both \x1b and \u001b formats)
+		const hasDimStart = testProcess.stdout.includes('\u001B[2m') || testProcess.stdout.includes('\u001B[2m');
+		const hasDimEnd = testProcess.stdout.includes('\u001B[22m') || testProcess.stdout.includes('\u001B[22m');
+		expect(hasDimStart).toBe(true);
+		expect(hasDimEnd).toBe(true);
 	});
 
 	test('case-sensitive filtering', async () => {

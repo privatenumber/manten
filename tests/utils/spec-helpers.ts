@@ -8,17 +8,14 @@ export const installManten = {
 	'node_modules/manten': ({ symlink }) => symlink(mantenPath),
 } satisfies FileTree;
 
-export const env = {
-	NO_COLOR: '1',
-};
-
 export const node = (
 	scriptPath: string,
-	options?: { env?: Record<string, string> },
+	options?: { env?: Record<string, string | undefined> },
 ) => execaNode(scriptPath, {
 	env: {
-		...env,
+		NO_COLOR: '1',
 		...options?.env,
 	},
+	extendEnv: false, // Don't inherit parent process env
 	reject: false,
 });
