@@ -16,6 +16,7 @@ Manten is designed for speed with minimal overhead—just `2.3 kB` and zero depe
 - **Zero config**: No test runner, no transforms—just Node.js
 - **Full control**: Manage async flow exactly how you want
 - **Strongly typed**: Full TypeScript support
+- **Snapshot testing**: Built-in snapshot support with automatic serialization
 
 ## Install
 ```sh
@@ -459,6 +460,34 @@ describe('Describe', ({ test, onFinish }) => {
 })
 ```
 
+### Snapshot Testing
+
+Capture and compare values across test runs. Snapshots are stored in `.manten.snap` and saved on process exit.
+
+```ts
+test('user operations', ({ expectSnapshot }) => {
+    // Auto-named: "user operations 1", "user operations 2", etc.
+    expectSnapshot(getUser())
+    expectSnapshot(getUserPermissions())
+
+    // Named snapshots (recommended) - order-independent and refactor-safe
+    expectSnapshot(getUser(), 'initial user state')
+    expectSnapshot(getUserPermissions(), 'initial permissions')
+})
+```
+
+**Update snapshots:** `MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.mjs`
+
+**Configure path:** Call `configure({ snapshotPath: 'custom.snap' })` before any tests run, or set `MANTEN_SNAPSHOT_PATH` env var.
+
+**Important:**
+- Test names must be unique across all files (duplicates throw an error)
+- Without named snapshots, reordering `expectSnapshot` calls breaks comparisons
+- Serialization uses `util.inspect` with sorted keys (handles objects, arrays, Maps, Sets, Dates, circular refs, etc.)
+
+> [!WARNING]
+> Snapshot serialization relies on Node.js [`util.inspect`](https://nodejs.org/api/util.html#utilinspectobject-options), which may produce different output across Node versions. If you upgrade Node and snapshots fail, re-run with `MANTEN_UPDATE_SNAPSHOTS=1` to regenerate them.
+
 ### Skipping tests
 
 Skip tests dynamically by calling `skip()` from within the test. This is useful when a test should be skipped based on runtime conditions (environment variables, system capabilities, etc.).
@@ -666,13 +695,20 @@ The final report is generated on `process.on('exit')`, so if the process crashes
 
 name: `string`
 
-testFunction: `(api: { onTestFail, onTestFinish }) => void | Promise<void>`
+testFunction: `(api: { signal, onTestFail, onTestFinish, skip, expectSnapshot }) => void | Promise<void>`
 
 timeoutOrOptions: `number | { timeout?: number, retry?: number }`
 
 Return value: `Promise<void>`
 
 Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings.
+
+API parameters:
+- `signal`: AbortSignal that aborts when the test times out or describe group is aborted
+- `onTestFail`: Register a callback for when the test fails
+- `onTestFinish`: Register a callback for after the test completes (pass or fail)
+- `skip`: Function to skip the test with an optional reason
+- `expectSnapshot`: Function to create/compare snapshots `(value, name?)`
 
 ### describe(description, testGroupFunction, options?)
 description: `string`
@@ -702,6 +738,20 @@ ms: `number`
 Return value: `void`
 
 Set a global timeout for the entire test process. If tests don't complete within the specified time, the process is forcibly terminated with exit code 1. The timer uses `.unref()`, so it won't prevent the process from exiting naturally if tests complete early. Pending tests are automatically reported when the timeout fires.
+
+### configure(options)
+options: `{ snapshotPath?: string }`
+
+Return value: `void`
+
+Configure global settings for manten. This should be called before any tests run.
+
+Options:
+- `snapshotPath`: Path to the snapshot file (default: `.manten.snap`)
+
+Environment variables:
+- `MANTEN_SNAPSHOT_PATH` - Sets the snapshot file path
+- `MANTEN_UPDATE_SNAPSHOTS` - Set to `1` or `true` to update snapshots (runtime mode, not configuration)
 
 ## FAQ
 

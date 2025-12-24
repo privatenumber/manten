@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { execaNode } from 'execa';
 import type { FileTree } from 'fs-fixture';
 
@@ -10,12 +11,19 @@ export const installManten = {
 
 export const node = (
 	scriptPath: string,
-	options?: { env?: Record<string, string | undefined> },
+	options?: {
+		env?: Record<string, string | undefined>;
+		reject?: boolean;
+	},
 ) => execaNode(scriptPath, {
 	env: {
 		NO_COLOR: '1',
 		...options?.env,
 	},
+	// Set cwd to the directory containing the test script
+	cwd: path.dirname(scriptPath),
 	extendEnv: false, // Don't inherit parent process env
-	reject: false,
+	reject: options?.reject ?? false,
+	// Don't inherit tsx loaders from parent process
+	nodeOptions: [],
 });

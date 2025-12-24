@@ -5,7 +5,7 @@ import { testSuite, expect } from 'manten';
 
 export default testSuite('parallel', ({ describe }) => {
 	describe('parallel: false (sequential)', ({ test }) => {
-		test('runs tests one at a time', async ({ onTestFail }) => {
+		test('runs tests one at a time', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -36,10 +36,6 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
 			// Sequential execution: each test completes before next starts
@@ -55,7 +51,7 @@ export default testSuite('parallel', ({ describe }) => {
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 
-		test('works with nested describes', async ({ onTestFail }) => {
+		test('works with nested describes', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -88,10 +84,6 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
 			// All execute sequentially
@@ -107,7 +99,7 @@ export default testSuite('parallel', ({ describe }) => {
 	});
 
 	describe('parallel: true (unbounded)', ({ test }) => {
-		test('runs all tests concurrently', async ({ onTestFail }) => {
+		test('runs all tests concurrently', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -138,28 +130,34 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
-			// All start before any complete
-			expectMatchInOrder(testProcess.stdout, [
-				'Test 1 start',
-				'Test 2 start',
-				'Test 3 start',
-				'Test 1 end',
-				'Test 2 end',
-				'Test 3 end',
-			]);
+			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
+
+			// Find indices of messages
+			const test1Start = lines.indexOf('Test 1 start');
+			const test2Start = lines.indexOf('Test 2 start');
+			const test3Start = lines.indexOf('Test 3 start');
+			const test1End = lines.indexOf('Test 1 end');
+			const test2End = lines.indexOf('Test 2 end');
+			const test3End = lines.indexOf('Test 3 end');
+
+			// All three tests should start before any of them end (concurrent execution)
+			const lastStart = Math.max(test1Start, test2Start, test3Start);
+			const firstEnd = Math.min(test1End, test2End, test3End);
+			expect(lastStart).toBeLessThan(firstEnd);
+
+			// Due to different timeouts, they should end in order:
+			// Test 1 (50ms), Test 2 (300ms), Test 3 (600ms)
+			expect(test1End).toBeLessThan(test2End);
+			expect(test2End).toBeLessThan(test3End);
 
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
 
 	describe('parallel: N (fixed limit)', ({ test }) => {
-		test('limits concurrent execution to N', async ({ onTestFail }) => {
+		test('limits concurrent execution to N', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -196,26 +194,44 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
-			// Only 2 run at a time: 1+2 start, then 3+4 start after some complete
-			expectMatchInOrder(testProcess.stdout, [
-				'Test 1 start',
-				'Test 2 start',
-			]);
+			// With parallel: 2, only 2 tests run concurrently
+			// Test 1 and Test 2 should start (in any order)
+			// Test 3 and Test 4 should only start after one of the first two completes
 
-			// Either Test 1 or Test 2 ends first, then Test 3 or 4 starts
+			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
+
+			// Find indices of start messages
+			const test1Start = lines.indexOf('Test 1 start');
+			const test2Start = lines.indexOf('Test 2 start');
+			const test3Start = lines.indexOf('Test 3 start');
+			const test4Start = lines.indexOf('Test 4 start');
+
+			// Find indices of end messages
+			const test1End = lines.indexOf('Test 1 end');
+			const test2End = lines.indexOf('Test 2 end');
+
+			// Verify Test 1 and Test 2 both start early (in first 2 positions)
+			expect(Math.max(test1Start, test2Start)).toBeLessThanOrEqual(1);
+
+			// Verify Test 3 starts only after Test 1 or Test 2 ends
+			const firstEndIndex = Math.min(test1End, test2End);
+			expect(test3Start).toBeGreaterThan(firstEndIndex);
+
+			// Verify Test 4 starts only after another test ends
+			expect(test4Start).toBeGreaterThan(firstEndIndex);
+
+			// All 4 tests should complete
+			expect(testProcess.stdout).toMatch('Test 1 start');
+			expect(testProcess.stdout).toMatch('Test 2 start');
 			expect(testProcess.stdout).toMatch('Test 3 start');
 			expect(testProcess.stdout).toMatch('Test 4 start');
 
 			expect(testProcess.stdout).toMatch('4 passed');
 		});
 
-		test('applies to both test and describe children', async ({ onTestFail }) => {
+		test('applies to both test and describe children', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -248,26 +264,36 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
-			// Parent test 1+2 start (2 slots), then child describe waits
-			expectMatchInOrder(testProcess.stdout, [
-				'Parent test 1 start',
-				'Parent test 2 start',
-			]);
+			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
 
-			// Child starts after at least one parent completes
+			// Find indices of start messages
+			const parent1Start = lines.indexOf('Parent test 1 start');
+			const parent2Start = lines.indexOf('Parent test 2 start');
+			const childStart = lines.indexOf('Child test start');
+
+			// Find indices of end messages
+			const parent1End = lines.indexOf('Parent test 1 end');
+			const parent2End = lines.indexOf('Parent test 2 end');
+
+			// Parent test 1 and 2 should both start early (in first 2 positions)
+			expect(Math.max(parent1Start, parent2Start)).toBeLessThanOrEqual(1);
+
+			// Child test starts only after at least one parent completes
+			const firstParentEnd = Math.min(parent1End, parent2End);
+			expect(childStart).toBeGreaterThan(firstParentEnd);
+
+			// All tests should complete
+			expect(testProcess.stdout).toMatch('Parent test 1 start');
+			expect(testProcess.stdout).toMatch('Parent test 2 start');
 			expect(testProcess.stdout).toMatch('Child test start');
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
 
 	describe('parallel: auto (dynamic)', ({ test }) => {
-		test('adapts concurrency based on system load', async ({ onTestFail }) => {
+		test('adapts concurrency based on system load', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -292,17 +318,13 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
 
 	describe('await bypasses parallel limiting', ({ test }) => {
-		test('explicit await runs immediately regardless of parallel setting', async ({ onTestFail }) => {
+		test('explicit await runs immediately regardless of parallel setting', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -341,26 +363,42 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
-			// Setup runs first, then Test 1+2 concurrent (both start), then Teardown
-			expectMatchInOrder(testProcess.stdout, [
-				'Setup start',
-				'Setup end',
-				'Test 1 start',
-				'Test 2 start',
-			]);
+			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
 
-			// Teardown waits for both tests to complete
-			expect(testProcess.stdout).toMatch('Teardown start');
+			// Find indices of messages
+			const setupStart = lines.indexOf('Setup start');
+			const setupEnd = lines.indexOf('Setup end');
+			const test1Start = lines.indexOf('Test 1 start');
+			const test2Start = lines.indexOf('Test 2 start');
+			const test1End = lines.indexOf('Test 1 end');
+			const test2End = lines.indexOf('Test 2 end');
+			const teardownStart = lines.indexOf('Teardown start');
+
+			// Setup runs first (due to await)
+			expect(setupStart).toBeLessThan(setupEnd);
+			expect(setupEnd).toBeLessThan(test1Start);
+			expect(setupEnd).toBeLessThan(test2Start);
+
+			// Test 1 and Test 2 run concurrently (both start before either ends)
+			const lastTestStart = Math.max(test1Start, test2Start);
+			const firstTestEnd = Math.min(test1End, test2End);
+			expect(lastTestStart).toBeLessThan(firstTestEnd);
+
+			// Teardown should start after both Test 1 and Test 2 start
+			// Due to the parallel limiter implementation, teardown might start
+			// slightly before the "Test 1 end" log appears, but it should be after both tests start
+			expect(teardownStart).toBeGreaterThan(test1Start);
+			expect(teardownStart).toBeGreaterThan(test2Start);
+
+			// Teardown should be one of the last operations
+			expect(lines.indexOf('Teardown start')).toBeGreaterThan(5);
+
 			expect(testProcess.stdout).toMatch('4 passed');
 		});
 
-		test('all awaited tests run sequentially despite parallel setting', async ({ onTestFail }) => {
+		test('all awaited tests run sequentially despite parallel setting', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -393,10 +431,6 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
 			// All awaited = sequential execution despite parallel: 10
@@ -414,7 +448,7 @@ export default testSuite('parallel', ({ describe }) => {
 	});
 
 	describe('nested parallel settings', ({ test }) => {
-		test('child and parent limits work independently', async ({ onTestFail }) => {
+		test('child and parent limits work independently', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -444,17 +478,13 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
 
 	describe('testSuite with parallel option', ({ test }) => {
-		test('testSuite respects parallel option when named', async ({ onTestFail }) => {
+		test('testSuite respects parallel option when named', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -487,10 +517,6 @@ export default testSuite('parallel', ({ describe }) => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			onTestFail(() => {
-				console.log(testProcess);
-			});
-
 			expect(testProcess.exitCode).toBe(0);
 
 			// Sequential execution: each test completes before next starts
@@ -506,7 +532,7 @@ export default testSuite('parallel', ({ describe }) => {
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 
-		test('testSuite parallel option limits runTestSuite calls', async ({ onTestFail }) => {
+		test('testSuite parallel option limits runTestSuite calls', async () => {
 			await using fixture = await createFixture({
 				'suite-a.mjs': `
 				import { setTimeout } from 'node:timers/promises';
@@ -557,10 +583,6 @@ export default testSuite('parallel', ({ describe }) => {
 			});
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
-
-			onTestFail(() => {
-				console.log(testProcess);
-			});
 
 			expect(testProcess.exitCode).toBe(0);
 

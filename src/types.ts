@@ -10,6 +10,7 @@ export type TestApi = {
 	onTestFail: (callback: onTestFailCallback) => void;
 	onTestFinish: onFinish;
 	skip: (reason?: string) => never;
+	expectSnapshot: (value: unknown, name?: string) => void;
 };
 
 type TestFunction = (api: TestApi) => void | Promise<void>;

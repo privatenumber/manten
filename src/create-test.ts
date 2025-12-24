@@ -15,6 +15,12 @@ import type { Context } from './context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
+import {
+	createSnapshotContext,
+	saveSnapshots,
+	getSnapshotSummary,
+} from './snapshot/snapshots.js';
+import { formatSnapshotSummary } from './snapshot/format.js';
 
 // Custom error class for skipping tests
 class SkipError extends Error {
@@ -58,11 +64,19 @@ const runTest = async (
 		logTestFail(testMeta, patchJestAssertionError(error), 'onTestFinish');
 	});
 
+	// Create snapshot context outside retry (counter resets on retry)
+	const snapshotContext = createSnapshotContext(testMeta.title, testMeta);
+
 	try {
 		await retry(
 			async (attempt) => {
 				testMeta.attempt = attempt;
 				testMeta.startTime = Date.now();
+
+				// Reset snapshot counter on retry so keys 1, 2 are reused (not 3, 4)
+				if (attempt > 1) {
+					snapshotContext.reset();
+				}
 
 				const abortController = new AbortController();
 
@@ -91,6 +105,7 @@ const runTest = async (
 							skip: (reason?: string) => {
 								throw new SkipError(reason);
 							},
+							expectSnapshot: snapshotContext.expectSnapshot,
 						}),
 						timeout,
 						abortController,
@@ -130,7 +145,22 @@ const runTest = async (
 const allTests: TestMeta[] = [];
 
 process.on('exit', () => {
+	// Save snapshots first (critical operation)
+	try {
+		saveSnapshots();
+	} catch (error) {
+		process.stderr.write(`Failed to save snapshots: ${error}\n`);
+	}
+
+	// Always log test report
 	logReport(allTests);
+
+	// Log snapshot summary if there are new/updated snapshots
+	const snapshotSummary = getSnapshotSummary();
+	if (snapshotSummary.new > 0 || snapshotSummary.updated > 0) {
+		const summaryMessage = formatSnapshotSummary(snapshotSummary);
+		process.stdout.write(`${summaryMessage}\n`);
+	}
 });
 
 const onlyRunTests = process.env.TESTONLY;
