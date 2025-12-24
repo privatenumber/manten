@@ -75,9 +75,10 @@ type Describe = (description: string, callback: ContextCallback, options?: Descr
 
 declare const setProcessTimeout: (ms: number) => void;
 
-declare const configure: (options: {
+type Config = {
     snapshotPath?: string;
-}) => void;
+};
+declare const configure: (config: Config) => void;
 
 export { configure, topLevelDescribe as describe, topLevelRunTestSuite as runTestSuite, setProcessTimeout, topLevelTest as test, testSuite };
 export type { Context, Describe, Test, TestSuite };

@@ -462,193 +462,28 @@ describe('Describe', ({ test, onFinish }) => {
 
 ### Snapshot Testing
 
-Manten supports snapshot testing to capture and compare values across test runs. Snapshots are stored in a single global JSON file (`.manten.snap` by default) and are automatically saved when the process exits.
-
-#### Basic Usage
+Capture and compare values across test runs. Snapshots are stored in `.manten.snap` and saved on process exit.
 
 ```ts
-test('snapshot example', ({ expectSnapshot }) => {
-    const result = computeData()
-    expectSnapshot(result) // Creates "snapshot example 1"
+test('user operations', ({ expectSnapshot }) => {
+    // Auto-named: "user operations 1", "user operations 2", etc.
+    expectSnapshot(getUser())
+    expectSnapshot(getUserPermissions())
 
-    const transformed = transform(result)
-    expectSnapshot(transformed) // Creates "snapshot example 2"
+    // Named snapshots (recommended) - order-independent and refactor-safe
+    expectSnapshot(getUser(), 'initial user state')
+    expectSnapshot(getUserPermissions(), 'initial permissions')
 })
 ```
 
-On first run with `MANTEN_UPDATE_SNAPSHOTS=1`, this creates snapshots. Subsequent runs compare against saved values.
+**Update snapshots:** `MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.mjs`
 
-#### Named Snapshots (Recommended)
+**Configure path:** Call `configure({ snapshotPath: 'custom.snap' })` before any tests run, or set `MANTEN_SNAPSHOT_PATH` env var.
 
-For stable, refactorable tests, use explicit names as the second parameter:
-
-```ts
-test('user data', ({ expectSnapshot }) => {
-    const user = getUser()
-    expectSnapshot(user, 'user data - initial state')
-
-    updateUser(user)
-    expectSnapshot(user, 'user data - after update')
-
-    deleteUser(user)
-    expectSnapshot(user, 'user data - after deletion')
-})
-```
-
-**Benefits of named snapshots:**
-- ✅ Order-independent - reorder or add/remove snapshots without breaking tests
-- ✅ Self-documenting - clear names describe what's being tested
-- ✅ Refactoring-safe - move code around without updating snapshots
-
-#### Updating Snapshots
-
-Update snapshots when expected values change:
-
-```sh
-# Set environment variable
-MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.mjs
-
-# Or use npm script
-npm test -- --update-snapshots  # If your script passes the flag
-```
-
-#### Configuration
-
-Configure the snapshot file path:
-
-```ts
-import { configure } from 'manten'
-
-// ⚠️ IMPORTANT: Must be called BEFORE any snapshot tests run
-configure({
-    snapshotPath: 'tests/snapshots.json' // Default: '.manten.snap'
-})
-```
-
-> **Note:** `configure()` must be called before any tests that use snapshots. If called after snapshots have been loaded, it will throw an error. Place this configuration at the very beginning of your test suite or in a setup file that runs before all tests.
-
-To update snapshots, use the environment variable `MANTEN_UPDATE_SNAPSHOTS=1` when running tests.
-
-Environment variables:
-- `MANTEN_SNAPSHOT_PATH` - Set snapshot file location
-- `MANTEN_UPDATE_SNAPSHOTS` - Set to `1` or `true` to update snapshots
-
-#### How It Works
-
-1. **Global snapshot file**: All tests share a single JSON file
-2. **Synchronous save on exit**: Snapshots are written when the process exits
-3. **Automatic serialization**: Objects, arrays, Maps, Sets, Dates, errors, and more are handled
-4. **Deterministic output**: Keys are sorted for consistent snapshots
-
-#### Important Caveats
-
-##### Auto-Counter Fragility
-
-Without explicit names, snapshots use auto-incrementing counters that are **position-dependent**:
-
-```ts
-test('fragile test', ({ expectSnapshot }) => {
-    expectSnapshot(a) // "fragile test 1"
-    expectSnapshot(b) // "fragile test 2"
-    expectSnapshot(c) // "fragile test 3"
-})
-
-// If you reorder:
-test('fragile test', ({ expectSnapshot }) => {
-    expectSnapshot(b) // Now compared against "fragile test 1" ❌
-    expectSnapshot(a) // Now compared against "fragile test 2" ❌
-    expectSnapshot(c) // "fragile test 3" ✅
-})
-```
-
-**This breaks when:**
-- Reordering snapshots within a test
-- Adding/removing snapshots in the middle
-- Conditionally calling `expectSnapshot`
-
-**Solution**: Always use named snapshots for production code.
-
-##### Test Name Uniqueness
-
-Test names must be globally unique when using snapshots:
-
-```ts
-// file1.test.mjs
-test('user test', ({ expectSnapshot }) => {
-    expectSnapshot(userData) // Creates "user test 1"
-})
-
-// file2.test.mjs
-test('user test', ({ expectSnapshot }) => { // ❌ Error! Duplicate test name
-    expectSnapshot(orderData) // This will throw an error
-})
-```
-
-Duplicate test names across files will throw an error to ensure deterministic snapshot loading. This prevents the dangerous scenario where running a subset of tests could cause snapshots to be compared against the wrong data.
-
-**Solution**: Use descriptive, unique test names across your entire test suite.
-
-##### Test Execution Order
-
-With unique test names, the order of **test execution** doesn't matter:
-
-```ts
-// These can run in any order - each has its own namespace
-test('test A', ({ expectSnapshot }) => { /* ... */ })
-test('test B', ({ expectSnapshot }) => { /* ... */ })
-test('test C', ({ expectSnapshot }) => { /* ... */ })
-```
-
-But the order of **snapshots within each test** still matters (unless using named snapshots).
-
-#### Supported Types
-
-The serializer handles:
-- Primitives (string, number, boolean, null, undefined, BigInt, Symbol)
-- Objects and arrays (with deterministic key ordering)
-- Dates (ISO string format)
-- Regular expressions
-- Errors (with sanitized stack traces)
-- Maps and Sets (with sorted entries)
-- TypedArrays (Uint8Array, etc.)
-- Circular references (marked as `[Circular]`)
-- Sparse arrays (holes become `$undefined`)
-
-#### Best Practices
-
-1. **Always use named snapshots** for maintainable tests
-2. **Keep test names unique** across your entire test suite
-3. **Review snapshot changes** carefully during code review
-4. **Avoid huge snapshots** - test specific properties instead of entire objects when possible
-5. **Use descriptive names** that explain what state is being captured
-6. **Don't snapshot non-deterministic data** (timestamps, random IDs, etc.)
-
-Example of good snapshot usage:
-
-```ts
-test('shopping cart calculations', ({ expectSnapshot }) => {
-    const cart = createCart()
-
-    cart.addItem({
-        id: 1,
-        price: 10,
-        quantity: 2
-    })
-    expectSnapshot(cart.getTotal(), 'shopping cart - single item total')
-    expectSnapshot(cart.getItemCount(), 'shopping cart - single item count')
-
-    cart.addItem({
-        id: 2,
-        price: 5,
-        quantity: 3
-    })
-    expectSnapshot(cart.getTotal(), 'shopping cart - multiple items total')
-    expectSnapshot(cart.getItemCount(), 'shopping cart - multiple items count')
-
-    cart.applyDiscount(0.1)
-    expectSnapshot(cart.getTotal(), 'shopping cart - after 10% discount')
-})
-```
+**Important:**
+- Test names must be unique across all files (duplicates throw an error)
+- Without named snapshots, reordering `expectSnapshot` calls breaks comparisons
+- Serialization uses `util.inspect` with sorted keys (handles objects, arrays, Maps, Sets, Dates, circular refs, etc.)
 
 ### Skipping tests
 
