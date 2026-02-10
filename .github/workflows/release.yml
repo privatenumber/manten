@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master, develop, beta]
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
     if: (
       github.repository_owner == 'pvtnbr' && github.ref_name =='develop'
       ) || (
-      github.repository_owner == 'privatenumber' && github.ref_name =='master'
+      github.repository_owner == 'privatenumber' && (github.ref_name == 'master' || github.ref_name == 'beta')
       )
     runs-on: ubuntu-latest
     timeout-minutes: 10
