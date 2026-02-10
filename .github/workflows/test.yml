@@ -36,4 +36,4 @@ jobs:
         run: pnpm lint
 
       - name: Test
-        run: pnpm concurrently "pnpm test" "pnpm run --use-node-version=18.17.0 test"
+        run: pnpm concurrently "pnpm test" "pnpm run --use-node-version=20.20.0 test"

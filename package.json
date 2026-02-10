@@ -48,6 +48,9 @@
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
+	"engines": {
+		"node": ">=20.20.0"
+	},
 	"dependencies": {
 		"expect": "^30.2.0"
 	},
