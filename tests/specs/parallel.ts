@@ -1,17 +1,17 @@
 import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from '../utils/expect-match-in-order.js';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('parallel', ({ describe }) => {
-	describe('parallel: false (sequential)', ({ test }) => {
+describe('parallel', () => {
+	describe('parallel: false (sequential)', () => {
 		test('runs tests one at a time', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Sequential tests', ({ test }) => {
+				describe('Sequential tests', () => {
 					test('Test 1', async () => {
 						console.log('Test 1 start');
 						await setTimeout(50);
@@ -55,16 +55,16 @@ export default testSuite('parallel', ({ describe }) => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Outer', ({ test, describe }) => {
+				describe('Outer', () => {
 					test('Outer test', async () => {
 						console.log('Outer test start');
 						await setTimeout(50);
 						console.log('Outer test end');
 					});
 
-					describe('Inner', ({ test }) => {
+					describe('Inner', () => {
 						test('Inner test 1', async () => {
 							console.log('Inner test 1 start');
 							await setTimeout(50);
@@ -98,14 +98,14 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('parallel: true (unbounded)', ({ test }) => {
+	describe('parallel: true (unbounded)', () => {
 		test('runs all tests concurrently', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Concurrent tests', ({ test }) => {
+				describe('Concurrent tests', () => {
 					test('Test 1', async () => {
 						console.log('Test 1 start');
 						await setTimeout(50);
@@ -156,14 +156,14 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('parallel: N (fixed limit)', ({ test }) => {
+	describe('parallel: N (fixed limit)', () => {
 		test('limits concurrent execution to N', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Limited concurrent tests', ({ test }) => {
+				describe('Limited concurrent tests', () => {
 					test('Test 1', async () => {
 						console.log('Test 1 start');
 						await setTimeout(100);
@@ -235,9 +235,9 @@ export default testSuite('parallel', ({ describe }) => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Parent', ({ test, describe }) => {
+				describe('Parent', () => {
 					test('Parent test 1', async () => {
 						console.log('Parent test 1 start');
 						await setTimeout(50);
@@ -250,7 +250,7 @@ export default testSuite('parallel', ({ describe }) => {
 						console.log('Parent test 2 end');
 					});
 
-					describe('Child describe', ({ test }) => {
+					describe('Child describe', () => {
 						test('Child test', async () => {
 							console.log('Child test start');
 							await setTimeout(50);
@@ -292,14 +292,14 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('parallel: auto (dynamic)', ({ test }) => {
+	describe('parallel: auto (dynamic)', () => {
 		test('adapts concurrency based on system load', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Auto concurrent tests', ({ test }) => {
+				describe('Auto concurrent tests', () => {
 					test('Test 1', async () => {
 						await setTimeout(50);
 					});
@@ -323,15 +323,15 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('await bypasses parallel limiting', ({ test }) => {
+	describe('await bypasses parallel limiting', () => {
 		test('explicit await runs immediately regardless of parallel setting', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
 				(async () => {
-					describe('Mixed await', async ({ test }) => {
+					describe('Mixed await', async () => {
 						await test('Setup', async () => {
 							console.log('Setup start');
 							await setTimeout(50);
@@ -402,10 +402,10 @@ export default testSuite('parallel', ({ describe }) => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
 				(async () => {
-					describe('All awaited', async ({ test }) => {
+					describe('All awaited', async () => {
 						await test('Test 1', async () => {
 							console.log('Test 1 start');
 							await setTimeout(50);
@@ -447,20 +447,20 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('nested parallel settings', ({ test }) => {
+	describe('nested parallel settings', () => {
 		test('child and parent limits work independently', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { describe } from 'manten';
+				import { describe, test } from 'manten';
 
-				describe('Parent auto', ({ test, describe }) => {
+				describe('Parent auto', () => {
 					test('Parent test', async () => {
 						console.log('Parent test');
 						await setTimeout(50);
 					});
 
-					describe('Child auto', ({ test }) => {
+					describe('Child auto', () => {
 						test('Child test 1', async () => {
 							console.log('Child test 1');
 							await setTimeout(50);
@@ -483,14 +483,14 @@ export default testSuite('parallel', ({ describe }) => {
 		});
 	});
 
-	describe('testSuite with parallel option', ({ test }) => {
-		test('testSuite respects parallel option when named', async () => {
+	describe('describe with parallel option and dynamic imports', () => {
+		test('describe respects parallel option with dynamic imports', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { testSuite } from 'manten';
+				import { describe, test } from 'manten';
 
-				const suite = testSuite('Sequential suite', ({ test }) => {
+				describe('Sequential suite', () => {
 					test('Test 1', async () => {
 						console.log('Test 1 start');
 						await setTimeout(50);
@@ -509,8 +509,6 @@ export default testSuite('parallel', ({ describe }) => {
 						console.log('Test 3 end');
 					});
 				}, { parallel: false });
-
-				suite();
 				`,
 				...installManten,
 			});
@@ -532,13 +530,13 @@ export default testSuite('parallel', ({ describe }) => {
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 
-		test('testSuite parallel option limits runTestSuite calls', async () => {
+		test('parallel option limits dynamic import suites', async () => {
 			await using fixture = await createFixture({
 				'suite-a.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { testSuite } from 'manten';
+				import { describe, test } from 'manten';
 
-				export default testSuite('Suite A', ({ test }) => {
+				describe('Suite A', () => {
 					test('A1', async () => {
 						console.log('A1 start');
 						await setTimeout(200);
@@ -548,9 +546,9 @@ export default testSuite('parallel', ({ describe }) => {
 				`,
 				'suite-b.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { testSuite } from 'manten';
+				import { describe, test } from 'manten';
 
-				export default testSuite('Suite B', ({ test }) => {
+				describe('Suite B', () => {
 					test('B1', async () => {
 						console.log('B1 start');
 						await setTimeout(200);
@@ -560,9 +558,9 @@ export default testSuite('parallel', ({ describe }) => {
 				`,
 				'suite-c.mjs': `
 				import { setTimeout } from 'node:timers/promises';
-				import { testSuite } from 'manten';
+				import { describe, test } from 'manten';
 
-				export default testSuite('Suite C', ({ test }) => {
+				describe('Suite C', () => {
 					test('C1', async () => {
 						console.log('C1 start');
 						await setTimeout(200);
@@ -573,10 +571,10 @@ export default testSuite('parallel', ({ describe }) => {
 				'index.mjs': `
 				import { describe } from 'manten';
 
-				describe('Container', ({ runTestSuite }) => {
-					runTestSuite(import('./suite-a.mjs'));
-					runTestSuite(import('./suite-b.mjs'));
-					runTestSuite(import('./suite-c.mjs'));
+				describe('Container', () => {
+					import('./suite-a.mjs');
+					import('./suite-b.mjs');
+					import('./suite-c.mjs');
 				}, { parallel: 2 });
 				`,
 				...installManten,

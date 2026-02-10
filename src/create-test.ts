@@ -15,12 +15,14 @@ import type { Context } from './context.js';
 import { timeLimitFunction } from './utils/timer.js';
 import { createHook } from './utils/hook.js';
 import { retry } from './utils/retry.js';
+import { linkAbortSignal } from './utils/link-abort-signal.js';
 import {
 	createSnapshotContext,
 	saveSnapshots,
 	getSnapshotSummary,
 } from './snapshot/snapshots.js';
 import { formatSnapshotSummary } from './snapshot/format.js';
+import { asyncContext } from './async-context.js';
 
 // Custom error class for skipping tests
 class SkipError extends Error {
@@ -53,12 +55,6 @@ const runTest = async (
 		logTestFail(testMeta, hookError, 'onTestFail');
 	});
 
-	const handleError = async (
-		error: unknown,
-	) => {
-		await testFail.runHooks(error);
-	};
-
 	// Why run an error hook on finish?
 	const testFinish = createHook<Callback>(async (error) => {
 		logTestFail(testMeta, patchJestAssertionError(error), 'onTestFinish');
@@ -80,35 +76,29 @@ const runTest = async (
 
 				const abortController = new AbortController();
 
-				// Listen to parent context abort
-				let handleParentAbort: (() => void) | undefined;
-				if (parentContext) {
-					handleParentAbort = () => {
-						if (!abortController.signal.aborted) {
-							abortController.abort(parentContext.abortController.signal.reason);
-						}
-					};
-					parentContext.abortController.signal.addEventListener('abort', handleParentAbort);
-
-					// Check if parent already aborted (missed the event)
-					if (parentContext.abortController.signal.aborted) {
-						handleParentAbort();
-					}
-				}
+				const unlinkAbort = parentContext
+					? linkAbortSignal(abortController, parentContext.abortController.signal)
+					: undefined;
 
 				try {
-					await timeLimitFunction(
-						testFunction({
-							signal: abortController.signal,
-							onTestFail: testFail.addHook,
-							onTestFinish: testFinish.addHook,
-							skip: (reason?: string) => {
+					// Get current ALS store to layer test-level entries on top
+					const currentStore = asyncContext.getStore();
+
+					await asyncContext.run(
+						{
+							...currentStore,
+							snapshotContext,
+							testFailHook: testFail.addHook,
+							testFinishHook: testFinish.addHook,
+							testSkip: (reason?: string) => {
 								throw new SkipError(reason);
 							},
-							expectSnapshot: snapshotContext.expectSnapshot,
-						}),
-						timeout,
-						abortController,
+						},
+						() => timeLimitFunction(
+							testFunction({ signal: abortController.signal }),
+							timeout,
+							abortController,
+						),
 					);
 					logTestSuccess(testMeta);
 				} catch (error) {
@@ -116,16 +106,12 @@ const runTest = async (
 						testMeta.skip = true;
 						logTestSkip(testMeta);
 					} else {
-						// Probably can remove error property now
 						logTestFail(testMeta, patchJestAssertionError(error));
-						await handleError(error);
+						await testFail.runHooks(error);
 						throw error;
 					}
 				} finally {
-					// Clean up parent listener to prevent memory leak
-					if (parentContext && handleParentAbort) {
-						parentContext.abortController.signal.removeEventListener('abort', handleParentAbort);
-					}
+					unlinkAbort?.();
 
 					if (!abortController.signal.aborted) {
 						abortController.abort();
@@ -170,83 +156,88 @@ if (onlyRunTests) {
 	console.log(dim(`Only running tests that match: ${JSON.stringify(onlyRunTests)}\n`));
 }
 
-export const createTest = (
-	prefix?: string,
-	parentContext?: Context,
-): Test => (
-	(
+export const test: Test = (title, testFunction, timeoutOrOptions) => {
+	const store = asyncContext.getStore();
+
+	if (store?.prefix) {
+		title = `${store.prefix} ${title}`;
+	}
+
+	// Mark parent as having started tests (SYNCHRONOUSLY)
+	// This ensures structural validity regardless of filtering
+	const parentContext = store?.context;
+	if (parentContext) {
+		parentContext.testsStarted = true;
+	}
+
+	if (onlyRunTests && !title.includes(onlyRunTests)) {
+		return Promise.resolve();
+	}
+
+	const testMeta: TestMeta = {
 		title,
 		testFunction,
-		timeoutOrOptions,
-	) => {
-		if (prefix) {
-			title = `${prefix} ${title}`;
-		}
+		retry: 1,
+	};
 
-		// Mark parent as having started tests (SYNCHRONOUSLY)
-		// This ensures structural validity regardless of filtering
-		if (parentContext) {
-			parentContext.testsStarted = true;
-		}
-
-		if (onlyRunTests && !title.includes(onlyRunTests)) {
-			return Promise.resolve();
-		}
-
-		const testMeta: TestMeta = {
-			title,
-			testFunction,
-			retry: 1,
-		};
-
-		if (timeoutOrOptions !== undefined) {
-			if (typeof timeoutOrOptions === 'number') {
-				testMeta.timeout = timeoutOrOptions;
-			} else {
-				testMeta.timeout = timeoutOrOptions?.timeout;
-				if (timeoutOrOptions?.retry) {
-					testMeta.retry = timeoutOrOptions?.retry;
-				}
+	if (timeoutOrOptions !== undefined) {
+		if (typeof timeoutOrOptions === 'number') {
+			testMeta.timeout = timeoutOrOptions;
+		} else {
+			testMeta.timeout = timeoutOrOptions?.timeout;
+			if (timeoutOrOptions?.retry) {
+				testMeta.retry = timeoutOrOptions?.retry;
 			}
 		}
-
-		allTests.push(testMeta);
-
-		// Check if parent describe is skipped
-		if (parentContext?.skipped) {
-			testMeta.skip = true;
-			testMeta.skipReason = parentContext.skipReason;
-			const now = Date.now();
-			testMeta.startTime = now;
-			testMeta.endTime = now;
-			logTestSkip(testMeta);
-			return Promise.resolve();
-		}
-
-		// Return async execution
-		return (async () => {
-			const executeTest = async () => {
-				// Check if parent has concurrency limiter
-				if (parentContext?.concurrencyLimiter) {
-					// Acquire slot
-					const release = await parentContext.concurrencyLimiter.acquire();
-					try {
-						await runTest(testMeta, parentContext);
-					} finally {
-						release();
-					}
-				} else {
-					await runTest(testMeta, parentContext);
-				}
-			};
-
-			const testRunning = executeTest();
-
-			if (parentContext) {
-				parentContext.pendingTests.push(testRunning);
-			}
-
-			await testRunning;
-		})();
 	}
-);
+
+	allTests.push(testMeta);
+
+	// Check if parent describe is skipped
+	if (parentContext?.skipped) {
+		testMeta.skip = true;
+		testMeta.skipReason = parentContext.skipReason;
+		const now = Date.now();
+		testMeta.startTime = now;
+		testMeta.endTime = now;
+		logTestSkip(testMeta);
+		return Promise.resolve();
+	}
+
+	const testRunning = (async () => {
+		if (parentContext?.concurrencyLimiter) {
+			const release = await parentContext.concurrencyLimiter.acquire();
+			try {
+				await runTest(testMeta, parentContext);
+			} finally {
+				release();
+			}
+		} else {
+			await runTest(testMeta, parentContext);
+		}
+	})();
+
+	if (parentContext) {
+		parentContext.pendingTests.push(testRunning);
+	}
+
+	return testRunning;
+};
+
+// Standalone APIs that read from ALS
+
+export const onTestFail = (callback: onTestFailCallback): void => {
+	const store = asyncContext.getStore();
+	if (!store?.testFailHook) {
+		throw new Error('onTestFail() must be called within a test()');
+	}
+	store.testFailHook(callback);
+};
+
+export const onTestFinish = (callback: Callback): void => {
+	const store = asyncContext.getStore();
+	if (!store?.testFinishHook) {
+		throw new Error('onTestFinish() must be called within a test()');
+	}
+	store.testFinishHook(callback);
+};

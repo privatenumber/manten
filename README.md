@@ -72,14 +72,12 @@ Feel free to use a different assertion library, such as [Node.js Assert](https:/
 
 
 ### Grouping tests
-Group tests with the `describe(description, testGroupFunction)` function. The first parameter is the description of the group, and the second is the test group function.
-
-Note, the `test` function is no longer imported but is passed as an argument to the test group function. This helps keep track of async contexts and generate better output logs, which we'll get into later.
+Group tests with `describe()`. All APIs are standalone imports—`test`, `describe`, hooks, etc. automatically know which group they belong to via async context.
 
 ```ts
-import { describe } from 'manten'
+import { describe, test } from 'manten'
 
-describe('Group description', ({ test }) => {
+describe('Group description', () => {
     test('Test A', () => {
         // ...
     })
@@ -90,10 +88,10 @@ describe('Group description', ({ test }) => {
 })
 ```
 
-`describe()` groups are infinitely nestable by using the new `describe` function from the test group function.
+`describe()` groups are infinitely nestable:
 
 ```ts
-describe('Group description', ({ test, describe }) => {
+describe('Group description', () => {
     test('Test A', () => {
         // ...
     })
@@ -215,7 +213,7 @@ When a test passes after retries, the output shows which attempt succeeded (e.g.
 Manten tracks all tests in a `describe()` block, so awaiting the group waits for all child tests—even concurrent ones.
 
 ```ts
-await describe('Group A', ({ test }) => {
+await describe('Group A', () => {
     test('Test A1', async () => {
         await something()
     })
@@ -239,7 +237,7 @@ This gives you fine-grained control: run tests concurrently within a group, then
 A group timeout puts a single deadline on an entire `describe()` block — setup + all tests. If everything finishes before the limit, nothing changes. If not, the whole group is aborted cleanly.
 
 ```ts
-describe('API Suite', ({ test }) => {
+describe('API Suite', () => {
     test('endpoint 1', async () => { /* ... */ })
     test('endpoint 2', async () => { /* ... */ })
     test('endpoint 3', async () => { /* ... */ })
@@ -251,7 +249,7 @@ The timer starts as soon as the `describe` callback begins. If the limit is hit,
 You can also hook into the group's `signal` for cleanup:
 
 ```ts
-describe('Database tests', async ({ test, signal }) => {
+describe('Database tests', async ({ signal }) => {
     const database = await connectDatabase()
 
     signal.addEventListener('abort', () => database.close())
@@ -265,8 +263,8 @@ describe('Database tests', async ({ test, signal }) => {
 Nested groups follow the same rule: the tightest timeout always applies.
 
 ```ts
-describe('Level 1', ({ describe }) => {
-    describe('Level 2', ({ test }) => {
+describe('Level 1', () => {
+    describe('Level 2', () => {
         test('slow test', async ({ signal }) => {
             await slowOp({ signal })
         }, 5000)
@@ -296,7 +294,7 @@ If your suite finishes in time, the process exits normally. If it doesn't, Mante
 Limit how many tests run simultaneously within a `describe()` block using the `parallel` option. This is useful for preventing resource exhaustion when tests hit databases, APIs, or file systems.
 
 ```ts
-describe('Database tests', ({ test }) => {
+describe('Database tests', () => {
     test('Query 1', async () => { /* ... */ })
     test('Query 2', async () => { /* ... */ })
     test('Query 3', async () => { /* ... */ })
@@ -320,7 +318,7 @@ The limit applies to **immediate children only** (direct `test()` and `describe(
 Tests that you explicitly `await` run immediately, bypassing the parallel queue:
 
 ```ts
-describe('Mixed', async ({ test }) => {
+describe('Mixed', async () => {
     await test('Setup', async () => {
         // Runs first
     })
@@ -337,62 +335,26 @@ describe('Mixed', async ({ test }) => {
 
 This gives you fine control: use the parallel limit for bulk tests, but `await` specific tests for setup/teardown that must run in sequence.
 
-### Test suites
-Group tests into separate files by exporting a `testSuite()`. This can be useful for organization, or creating a set of reusable tests since test suites can accept arguments.
+### Splitting tests across files
 
-Test suites can optionally have a name as the first parameter, which wraps all tests in an implicit `describe()` block:
-
-```ts
-// test-suite-a.ts
-
-import { testSuite } from 'manten'
-
-// With name (wraps tests in describe block)
-export default testSuite('Test suite A', (
-    { test },
-
-    // Can have parameters to accept
-    _value: number
-) => {
-    test('Test A', async () => {
-        // ...
-    })
-
-    test('Test B', async () => {
-        // ...
-    })
-})
-
-// Without name (no grouping)
-export const anotherSuite = testSuite((
-    { describe, test }
-) => {
-    describe('Group', () => {
-        test('Test C', () => {
-            // ...
-        })
-    })
-})
-```
+Use dynamic imports inside `describe()` to organize tests into separate files. Tests in the imported file automatically nest under the parent group:
 
 ```ts
-import testSuiteA from './test-suite-a'
-
-// Pass in a value to the test suite
-testSuiteA(100)
-// Output:
-// ✔ Test suite A › Test A
-// ✔ Test suite A › Test B
-```
-
-#### Nesting test suites
-Nest test suites with the `describe()` function by calling it with `runTestSuite(testSuite)`. This will log all tests in the test suite under the group description.
-
-```ts
+// tests/index.ts
 import { describe } from 'manten'
 
-describe('Group', ({ runTestSuite }) => {
-    runTestSuite(import('./test-suite-a'))
+describe('Auth', async () => {
+    await import('./auth-login.ts')
+    await import('./auth-logout.ts')
+})
+```
+
+```ts
+// tests/auth-login.ts
+import { test, expect } from 'manten'
+
+test('logs in with valid credentials', async () => {
+    // Automatically grouped under "Auth ›"
 })
 ```
 
@@ -400,25 +362,16 @@ describe('Group', ({ runTestSuite }) => {
 
 #### Test hooks
 
-Tests receive an API object with hooks for debugging and cleanup:
-
-```ts
-test('example', async ({
-    signal, onTestFail, onTestFinish, skip
-}) => {
-    // signal: AbortSignal - see "Timeouts & Cleanup" section above
-    // onTestFail: Debug hook when test fails
-    // onTestFinish: Cleanup hook after test completes
-    // skip: Function to skip the test - see "Skipping tests" section below
-})
-```
+All hooks are standalone imports. Call them inside a `test()` to register callbacks for the current test:
 
 ##### `onTestFail`
 
 Debug tests by logging relevant information when a test fails.
 
 ```ts
-test('Test', async ({ onTestFail }) => {
+import { test, onTestFail } from 'manten'
+
+test('Test', async () => {
     const fixture = await createFixture()
     onTestFail(async (error) => {
         console.log(error)
@@ -435,7 +388,9 @@ test('Test', async ({ onTestFail }) => {
 Execute cleanup code after the test finishes, even if it errors.
 
 ```ts
-test('Test', async ({ onTestFinish }) => {
+import { test, onTestFinish } from 'manten'
+
+test('Test', async () => {
     const fixture = await createFixture()
     onTestFinish(async () => await fixture.remove())
 
@@ -450,7 +405,9 @@ test('Test', async ({ onTestFinish }) => {
 Similarly to `onTestFinish`, you can execute cleanup code after all tests in a `describe()` finish.
 
 ```ts
-describe('Describe', ({ test, onFinish }) => {
+import { describe, test, onFinish } from 'manten'
+
+describe('Describe', async () => {
     const fixture = await createFixture()
     onFinish(async () => await fixture.remove())
 
@@ -465,7 +422,9 @@ describe('Describe', ({ test, onFinish }) => {
 Capture and compare values across test runs. Snapshots are stored in `.manten.snap` and saved on process exit.
 
 ```ts
-test('user operations', ({ expectSnapshot }) => {
+import { test, expectSnapshot } from 'manten'
+
+test('user operations', () => {
     // Auto-named: "user operations 1", "user operations 2", etc.
     expectSnapshot(getUser())
     expectSnapshot(getUserPermissions())
@@ -493,7 +452,9 @@ test('user operations', ({ expectSnapshot }) => {
 Skip tests dynamically by calling `skip()` from within the test. This is useful when a test should be skipped based on runtime conditions (environment variables, system capabilities, etc.).
 
 ```ts
-test('platform-specific feature', ({ skip }) => {
+import { test, expect, skip } from 'manten'
+
+test('platform-specific feature', () => {
     if (process.platform !== 'linux') {
         skip('Only runs on Linux')
     }
@@ -523,7 +484,7 @@ When a test is skipped:
 The `skip()` function throws internally to stop execution, so any code after it won't run:
 
 ```ts
-test('example', ({ skip }) => {
+test('example', () => {
     skip('reason')
     console.log('This will never execute')
 })
@@ -532,7 +493,7 @@ test('example', ({ skip }) => {
 If you allocate resources before skipping, use `onTestFinish` to clean them up:
 
 ```ts
-test('conditional test', async ({ skip, onTestFinish }) => {
+test('conditional test', async () => {
     const tempFile = await createTempFile()
     onTestFinish(() => tempFile.cleanup()) // Always runs, even if skipped
 
@@ -549,7 +510,7 @@ test('conditional test', async ({ skip, onTestFinish }) => {
 Skip entire test groups by calling `skip()` in the describe callback:
 
 ```ts
-describe('GPU tests', ({ test, skip }) => {
+describe('GPU tests', () => {
     if (!hasGPU) {
         skip('GPU not available')
     }
@@ -574,7 +535,7 @@ All tests in the group will be marked as skipped and appear in the report:
 **Important:** `skip()` must be called before any tests or nested describes run:
 
 ```ts
-describe('Invalid', ({ test, skip }) => {
+describe('Invalid', () => {
     test('runs first', () => { /* ... */ }) // ✅ Executes
 
     skip('Too late!') // ❌ Throws error
@@ -584,7 +545,7 @@ describe('Invalid', ({ test, skip }) => {
 The describe callback continues executing after `skip()` is called (unlike test skip, which throws). This allows all tests to register for visibility in the report:
 
 ```ts
-describe('Feature tests', ({ test, skip }) => {
+describe('Feature tests', () => {
     if (!featureEnabled) {
         skip('Feature disabled')
         // Callback continues - tests below still register
@@ -598,10 +559,10 @@ describe('Feature tests', ({ test, skip }) => {
 Nested describes inherit the skip state from their parent:
 
 ```ts
-describe('Graphics', ({ describe, skip }) => {
+describe('Graphics', () => {
     skip('No GPU available')
 
-    describe('2D', ({ test }) => {
+    describe('2D', () => {
         test('canvas', () => { /* ... */ }) // Skipped (parent skipped)
         test('svg', () => { /* ... */ }) // Skipped (parent skipped)
     })
@@ -634,21 +595,14 @@ This will run only the test (or tests) whose name includes the substring partial
 ```ts
 import getNode from 'get-node'
 import { execaNode } from 'execa'
-import { testSuite } from 'manten'
+import { test } from 'manten'
 
-const runTest = testSuite((
-    { test },
-    node
-) => {
-    test(
-        `Works in Node.js ${node.version}`,
-        () => execaNode('./script.js', { nodePath: node.path })
-    )
-});
+const nodeVersions = ['18.20.0', '20.18.0', '22.12.0']
 
-['12.22.9', '14.18.3', '16.13.2'].map(
-    async nodeVersion => runTest(await getNode(nodeVersion))
-)
+nodeVersions.map(async (version) => {
+    const node = await getNode(version)
+    test(`Works in Node.js ${node.version}`, () => execaNode('./script.js', { nodePath: node.path }))
+})
 ```
 
 ### Running multiple test files
@@ -695,42 +649,56 @@ The final report is generated on `process.on('exit')`, so if the process crashes
 
 name: `string`
 
-testFunction: `(api: { signal, onTestFail, onTestFinish, skip, expectSnapshot }) => void | Promise<void>`
+testFunction: `(api?: { signal: AbortSignal }) => void | Promise<void>`
 
 timeoutOrOptions: `number | { timeout?: number, retry?: number }`
 
 Return value: `Promise<void>`
 
-Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings.
+Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings. The callback receives an optional `{ signal }` that aborts when the test times out or the parent describe group is aborted.
 
-API parameters:
-- `signal`: AbortSignal that aborts when the test times out or describe group is aborted
-- `onTestFail`: Register a callback for when the test fails
-- `onTestFinish`: Register a callback for after the test completes (pass or fail)
-- `skip`: Function to skip the test with an optional reason
-- `expectSnapshot`: Function to create/compare snapshots `(value, name?)`
-
-### describe(description, testGroupFunction, options?)
+### describe(description, callback, options?)
 description: `string`
 
-testGroupFunction: `(api: { signal, test, describe, runTestSuite, onFinish }) => void | Promise<void>`
+callback: `(api?: { signal: AbortSignal }) => void | Promise<void>`
 
 options: `{ parallel?: boolean | number | 'auto', timeout?: number }`
 
 Return value: `Promise<void>`
 
-Create a group of tests. The group tracks all child tests and waits for them to complete. Supports `parallel` for concurrency limiting and `timeout` for collective time limits.
+Create a group of tests. The group tracks all child tests and waits for them to complete. Supports `parallel` for concurrency limiting and `timeout` for collective time limits. The callback receives an optional `{ signal }` that aborts when the group times out.
 
-### testSuite(name?, testSuiteFunction, options?)
+### onTestFail(callback)
+
+callback: `(error: unknown) => void`
+
+Register a callback for when the current test fails. Must be called within a `test()`.
+
+### onTestFinish(callback)
+
+callback: `() => void | Promise<void>`
+
+Register a cleanup callback that runs after the current test completes (pass or fail). Must be called within a `test()`.
+
+### onFinish(callback)
+
+callback: `() => void | Promise<void>`
+
+Register a cleanup callback that runs after all tests in the current `describe()` complete. Must be called within a `describe()`.
+
+### skip(reason?)
+
+reason (optional): `string`
+
+Skip the current test or describe group. In a test, throws to stop execution immediately. In a describe, marks all subsequent tests as skipped. Must be called within a `test()` or `describe()`.
+
+### expectSnapshot(value, name?)
+
+value: `unknown`
+
 name (optional): `string`
 
-testSuiteFunction: `(api: { signal, test, describe, runTestSuite }, ...args) => any`
-
-options (optional): `{ parallel?: boolean | number | 'auto', timeout?: number }`
-
-Return value: `(...testSuiteArguments) => Promise<ReturnType<testSuiteFunction>>`
-
-Create a test suite. When a name is provided, all tests in the suite are wrapped in an implicit `describe()` block. The options parameter only applies when a name is provided (since it uses `describe()` internally).
+Compare a value against a stored snapshot. If no snapshot exists, creates one. Must be called within a `test()`. See [Snapshot Testing](#snapshot-testing).
 
 ### setProcessTimeout(ms)
 ms: `number`

@@ -1,14 +1,16 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('abort signal', ({ test }) => {
-	test('signal provided to test callback', async ({ onTestFail }) => {
+describe('abort signal', () => {
+	test('signal provided to test callback', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('signal is AbortSignal', ({ signal }) => {
 					if (!(signal instanceof AbortSignal)) {
 						throw new Error('signal is not AbortSignal');
@@ -32,12 +34,12 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
-	test('signal aborted on timeout', async ({ onTestFail }) => {
+	test('signal aborted on timeout', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('signal aborted on timeout', async ({ signal }) => {
 					let aborted = false;
 					signal.addEventListener('abort', () => {
@@ -67,13 +69,13 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 failed');
 	});
 
-	test('signal enables graceful cleanup', async ({ onTestFail }) => {
+	test('signal enables graceful cleanup', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('graceful cleanup on timeout', async ({ signal }) => {
 					let cleaned = false;
 
@@ -105,12 +107,12 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 failed');
 	});
 
-	test('signal not aborted when test completes', async ({ onTestFail }) => {
+	test('signal not aborted when test completes', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('signal not aborted on success', async ({ signal }) => {
 					let aborted = false;
 					signal.addEventListener('abort', () => {
@@ -139,13 +141,13 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
-	test('new signal created per retry attempt', async ({ onTestFail }) => {
+	test('new signal created per retry attempt', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				let attempt = 0;
 				const signals = [];
 
@@ -192,12 +194,12 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
-	test('signal works without timeout', async ({ onTestFail }) => {
+	test('signal works without timeout', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('signal provided without timeout', ({ signal }) => {
 					if (!(signal instanceof AbortSignal)) {
 						throw new Error('signal is not AbortSignal');
@@ -221,14 +223,14 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
-	test('signal aborted on success', async ({ onTestFail }) => {
+	test('signal aborted on success', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test, onTestFinish } from 'manten';
 
-			describe('abort signal', ({ test }) => {
-				test('signal aborted after test completes', async ({ signal, onTestFinish }) => {
+			describe('abort signal', () => {
+				test('signal aborted after test completes', async ({ signal }) => {
 					let cleaned = false;
 
 					signal.addEventListener('abort', () => {
@@ -262,12 +264,12 @@ export default testSuite('abort signal', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
-	test('abort reason contains timeout error', async ({ onTestFail }) => {
+	test('abort reason contains timeout error', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('abort signal', ({ test }) => {
+			describe('abort signal', () => {
 				test('abort reason on timeout', async ({ signal }) => {
 					signal.addEventListener('abort', () => {
 						// Write reason to stdout for verification

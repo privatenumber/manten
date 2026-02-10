@@ -1,8 +1,8 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('api', ({ test }) => {
+describe('api', () => {
 	test('Should prevent console.log hijack', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `

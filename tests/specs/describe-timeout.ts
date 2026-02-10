@@ -1,15 +1,17 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('describe timeout', ({ test }) => {
-	test('describe timeout aborts all child tests', async ({ onTestFail }) => {
+describe('describe timeout', () => {
+	test('describe timeout aborts all child tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Group', ({ test }) => {
+			describe('Group', () => {
 				test('slow test 1', async ({ signal }) => {
 					// Will be aborted by group timeout
 					await setTimeout(3_600_000, null, { signal });
@@ -35,13 +37,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('2 failed');
 	});
 
-	test('describe signal provided for cleanup', async ({ onTestFail }) => {
+	test('describe signal provided for cleanup', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Group', ({ test, signal }) => {
+			describe('Group', ({ signal }) => {
 				let cleaned = false;
 
 				signal.addEventListener('abort', () => {
@@ -68,14 +70,14 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('CLEANUP: true');
 	});
 
-	test('nested describe timeouts - minimum wins', async ({ onTestFail }) => {
+	test('nested describe timeouts - minimum wins', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Level 1', ({ describe }) => {
-				describe('Level 2', ({ test }) => {
+			describe('Level 1', () => {
+				describe('Level 2', () => {
 					test('test', async ({ signal }) => {
 						// Will be aborted by Level 2 timeout
 						await setTimeout(3_600_000, null, { signal });
@@ -97,14 +99,14 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 	});
 
-	test('describe timeout with retry - aborts immediately', async ({ onTestFail }) => {
+	test('describe timeout with retry - aborts immediately', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
 			let attempt = 0;
-			describe('Group', ({ test }) => {
+			describe('Group', () => {
 				test('flaky', async ({ signal }) => {
 					attempt += 1;
 					console.log('ATTEMPT:', attempt);
@@ -128,13 +130,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 	});
 
-	test('describe timeout with parallel false', async ({ onTestFail }) => {
+	test('describe timeout with parallel false', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Group', ({ test }) => {
+			describe('Group', () => {
 				test('test 1', async ({ signal }) => {
 					// Instant success. Eliminates race against group timeout.
 					await new Promise(resolve => setImmediate(resolve));
@@ -166,13 +168,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('failed');
 	});
 
-	test('describe timeout starts on callback entry', async ({ onTestFail }) => {
+	test('describe timeout starts on callback entry', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Group', async ({ test, signal }) => {
+			describe('Group', async ({ signal }) => {
 				// Hang until signal fires (deterministic)
 				await setTimeout(3_600_000, null, { signal });
 
@@ -194,13 +196,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 	});
 
-	test('child inherits already aborted state', async ({ onTestFail }) => {
+	test('child inherits already aborted state', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Parent', async ({ test, signal }) => {
+			describe('Parent', async ({ signal }) => {
 				// Hang until signal fires - deterministic timeout trigger
 				try {
 					await setTimeout(3_600_000, null, { signal });
@@ -231,13 +233,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('VERIFIED_CHILD_RAN');
 	});
 
-	test('test timeout takes precedence if shorter', async ({ onTestFail }) => {
+	test('test timeout takes precedence if shorter', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Group', ({ test }) => {
+			describe('Group', () => {
 				test('test', async ({ signal }) => {
 					// Will be aborted by test timeout
 					await setTimeout(3_600_000, null, { signal });
@@ -260,12 +262,12 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stderr).not.toMatch('Timeout: 5000ms');
 	});
 
-	test('no MaxListenersExceededWarning with many children', async ({ onTestFail }) => {
+	test('no MaxListenersExceededWarning with many children', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Stress', ({ test }) => {
+			describe('Stress', () => {
 				// Create 20 tests to trigger default listener limit (10)
 				for (let i = 0; i < 20; i += 1) {
 					test('child ' + i, async () => {});
@@ -287,7 +289,7 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('20 passed');
 	});
 
-	test('swallows errors thrown after timeout', async ({ onTestFail }) => {
+	test('swallows errors thrown after timeout', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
@@ -314,13 +316,13 @@ export default testSuite('describe timeout', ({ test }) => {
 		expect(testProcess.stderr).not.toMatch('I AM A ZOMBIE ERROR');
 	});
 
-	test('queued tests abort when group times out', async ({ onTestFail }) => {
+	test('queued tests abort when group times out', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { setTimeout } from 'node:timers/promises';
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('Queue', ({ test }) => {
+			describe('Queue', () => {
 				// Test 1: Blocks the queue until aborted
 				test('blocker', async ({ signal }) => {
 					console.log('BLOCKER_STARTED');

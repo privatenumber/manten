@@ -1,7 +1,7 @@
 import { serialize } from '../../src/snapshot/snapshots.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('snapshots serialize', ({ test }) => {
+describe('snapshots serialize', () => {
 	test('sorts object keys', () => {
 		expect(serialize({
 			z: 1,

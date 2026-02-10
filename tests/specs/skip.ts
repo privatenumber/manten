@@ -1,14 +1,14 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('skip', ({ test }) => {
+describe('skip', () => {
 	test('should skip conditionally', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, skip } from 'manten';
 
-			test('should skip', ({ skip }) => {
+			test('should skip', () => {
 				const someCondition = true;
 				if (someCondition) {
 					skip('reason why');
@@ -40,9 +40,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should skip without reason', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, skip } from 'manten';
 
-			test('should skip no reason', ({ skip }) => {
+			test('should skip no reason', () => {
 				skip();
 			});
 			`,
@@ -60,15 +60,15 @@ export default testSuite('skip', ({ test }) => {
 	test('should skip inside describe groups', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Group A', async ({ test, describe }) => {
-				test('nested skip', ({ skip }) => {
+			await describe('Group A', async () => {
+				test('nested skip', () => {
 					skip('nested reason');
 				});
 
-				await describe('Group B', ({ test }) => {
-					test('deeply nested skip', ({ skip }) => {
+				await describe('Group B', () => {
+					test('deeply nested skip', () => {
 						skip();
 					});
 				});
@@ -89,9 +89,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should run hooks for skipped tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, skip, onTestFinish } from 'manten';
 
-			test('skip with hooks', ({ skip, onTestFinish }) => {
+			test('skip with hooks', () => {
 				console.log('before skip');
 				onTestFinish(() => {
 					console.log('cleanup ran');
@@ -116,10 +116,10 @@ export default testSuite('skip', ({ test }) => {
 	test('should not retry skipped tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, skip } from 'manten';
 
 			let attemptCount = 0;
-			test('skip with retry', ({ skip }) => {
+			test('skip with retry', () => {
 				attemptCount += 1;
 				console.log('attempt:', attemptCount);
 				skip('should not retry');
@@ -141,9 +141,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should not trigger timeout for skipped tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, skip } from 'manten';
 
-			test('skip with timeout', ({ skip }) => {
+			test('skip with timeout', () => {
 				skip('immediate skip');
 			}, 100);
 			`,
@@ -161,9 +161,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should skip entire describe block', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('GPU tests', ({ test, skip }) => {
+			await describe('GPU tests', () => {
 				const hasGPU = false;
 				if (!hasGPU) {
 					skip('GPU not available');
@@ -205,9 +205,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should error if skip called after test starts', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Invalid', ({ test, skip }) => {
+			await describe('Invalid', () => {
 				test('runs first', () => {
 					console.log('First test ran');
 				});
@@ -232,12 +232,12 @@ export default testSuite('skip', ({ test }) => {
 	test('should inherit skip state in nested describes', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Graphics', async ({ describe, skip }) => {
+			await describe('Graphics', async () => {
 				skip('No GPU available');
 
-				await describe('2D', ({ test }) => {
+				await describe('2D', () => {
 					test('canvas', () => {
 						console.log('Should not run');
 					});
@@ -247,7 +247,7 @@ export default testSuite('skip', ({ test }) => {
 					});
 				});
 
-				await describe('3D', ({ test }) => {
+				await describe('3D', () => {
 					test('webgl', () => {
 						console.log('Should not run');
 					});
@@ -276,10 +276,10 @@ export default testSuite('skip', ({ test }) => {
 	test('should allow child describe to skip independently', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Parent', async ({ describe }) => {
-				await describe('Child A', ({ test, skip }) => {
+			await describe('Parent', async () => {
+				await describe('Child A', () => {
 					skip('Child A skipped');
 
 					test('test 1', () => {
@@ -287,7 +287,7 @@ export default testSuite('skip', ({ test }) => {
 					});
 				});
 
-				await describe('Child B', ({ test }) => {
+				await describe('Child B', () => {
 					test('test 2', () => {
 						console.log('Should run');
 					});
@@ -311,9 +311,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should run cleanup hooks for skipped describes', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip, onFinish } from 'manten';
 
-			await describe('Database tests', async ({ test, skip, onFinish }) => {
+			await describe('Database tests', async () => {
 				console.log('Setup database');
 
 				onFinish(() => {
@@ -343,10 +343,10 @@ export default testSuite('skip', ({ test }) => {
 	test('should error if nested describe called before skip', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Parent', async ({ describe, skip }) => {
-				await describe('Child runs first', ({ test }) => {
+			await describe('Parent', async () => {
+				await describe('Child runs first', () => {
 					test('test 1', () => {
 						console.log('First test ran');
 					});
@@ -368,12 +368,12 @@ export default testSuite('skip', ({ test }) => {
 	test('should handle mixed skip sources', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('Group', ({ test, skip }) => {
+			await describe('Group', () => {
 				skip('Group skipped');
 
-				test('test with own skip', ({ skip }) => {
+				test('test with own skip', () => {
 					console.log('Test body should not run');
 					skip('Test skipped');
 				});
@@ -398,9 +398,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should enforce skip rules even with TESTONLY filtering', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test, describe } from 'manten';
+			import { test, describe, skip } from 'manten';
 
-			await describe('suite', ({ test, skip }) => {
+			await describe('suite', () => {
 				test('Test A', () => {
 					console.log('Test A runs');
 				});
@@ -423,22 +423,20 @@ export default testSuite('skip', ({ test }) => {
 		expect(testProcess.stderr).toMatch('skip() must be called before any tests');
 	});
 
-	test('should error if skip called after runTestSuite', async () => {
+	test('should error if skip called after dynamic import', async () => {
 		await using fixture = await createFixture({
-			'test-suite.mjs': `
-			import { testSuite } from 'manten';
+			'child.mjs': `
+			import { test } from 'manten';
 
-			export default testSuite(({ test }) => {
-				test('suite test', () => {
-					console.log('Suite test ran');
-				});
+			test('suite test', () => {
+				console.log('Suite test ran');
 			});
 			`,
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, skip } from 'manten';
 
-			await describe('Parent', async ({ runTestSuite, skip }) => {
-				await runTestSuite(import('./test-suite.mjs'));
+			await describe('Parent', async () => {
+				await import('./child.mjs');
 
 				skip('Too late!');
 			});
@@ -456,9 +454,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should allow skip before async setup completes', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test, skip } from 'manten';
 
-			await describe('Async setup', async ({ test, skip }) => {
+			await describe('Async setup', async () => {
 				const config = await Promise.resolve({ enabled: false });
 
 				if (!config.enabled) {
@@ -489,9 +487,9 @@ export default testSuite('skip', ({ test }) => {
 	test('should allow skip without early return pattern', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test, skip } from 'manten';
 
-			await describe('Conditional skip', ({ test, skip }) => {
+			await describe('Conditional skip', () => {
 				if (!process.env.FEATURE_FLAG) {
 					skip('Feature not enabled');
 					// Continue to register tests (no return)

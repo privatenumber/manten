@@ -1,14 +1,16 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('retry', ({ test }) => {
-	test('retry', async ({ onTestFail }) => {
+describe('retry', () => {
+	test('retry', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('retry', ({ test }) => {
+			describe('retry', () => {
 				{
 					let count = 0;
 					test('should fail 5 times', () => {
@@ -51,12 +53,12 @@ export default testSuite('retry', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 failed');
 	});
 
-	test('retry with timeout interaction', async ({ onTestFail }) => {
+	test('retry with timeout interaction', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			describe('retry with timeout', ({ test }) => {
+			describe('retry with timeout', () => {
 				let attempt = 0;
 
 				test('should retry timed-out tests', async () => {

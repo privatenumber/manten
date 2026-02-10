@@ -1,9 +1,11 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('reporting', ({ test }) => {
-	test('shows pending symbol for incomplete tests', async ({ onTestFail }) => {
+describe('reporting', () => {
+	test('shows pending symbol for incomplete tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { test } from 'manten';
@@ -33,7 +35,7 @@ export default testSuite('reporting', ({ test }) => {
 		expect(testProcess.stdout).toMatch('1 pending');
 	});
 
-	test('report with only pending tests', async ({ onTestFail }) => {
+	test('report with only pending tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { test } from 'manten';

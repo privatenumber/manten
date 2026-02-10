@@ -1,15 +1,17 @@
 import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from '../utils/expect-match-in-order.js';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('hooks', ({ test }) => {
-	test('test hooks (onTestFail, onTestFinish)', async ({ onTestFail }) => {
+describe('hooks', () => {
+	test('test hooks (onTestFail, onTestFinish)', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, onTestFail, onTestFinish } from 'manten';
 
-			test('hooks', ({ onTestFail, onTestFinish }) => {
+			test('hooks', () => {
 				console.log('test start');
 				onTestFail((error) => {
 					console.log('test error', error.message);
@@ -41,12 +43,12 @@ export default testSuite('hooks', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Error: hello');
 	});
 
-	test('failing test hooks', async ({ onTestFail }) => {
+	test('failing test hooks', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { test } from 'manten';
+			import { test, onTestFail, onTestFinish } from 'manten';
 
-			test('failing hooks', ({ onTestFail, onTestFinish }) => {
+			test('failing hooks', () => {
 				onTestFail(() => {
 					throw new Error('onTestFail error');
 				});
@@ -81,30 +83,30 @@ export default testSuite('hooks', ({ test }) => {
 		expect(testProcess.stderr).toMatch('Error: onTestFinish error');
 	});
 
-	test('lifecycle hooks (onFinish in describe/suite)', async ({ onTestFail }) => {
+	test('lifecycle hooks (onFinish in describe)', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe, testSuite } from 'manten';
+			import { describe, onFinish } from 'manten';
 
-			describe('describe', async ({ onFinish, runTestSuite }) => {
+			describe('describe', async () => {
 				onFinish(() => {
 					console.log('describe finish');
 				});
 
-				await runTestSuite(testSuite(({ describe, onFinish }) => {
-					console.log('test suite start');
+				await describe('inner', () => {
+					console.log('inner start');
 
 					onFinish(() => {
-						console.log('test suite finish');
+						console.log('inner finish');
 					});
 
-					describe('nested describe', ({ onFinish }) => {
+					describe('nested describe', () => {
 						console.log('nested start');
 						onFinish(() => {
 							console.log('nested finish');
 						});
 					});
-				}));
+				});
 			});
 			`,
 			...installManten,
@@ -118,20 +120,20 @@ export default testSuite('hooks', ({ test }) => {
 
 		expect(testProcess.exitCode).toBe(0);
 		expectMatchInOrder(testProcess.stdout, [
-			'test suite start',
+			'inner start',
 			'nested start',
 			'nested finish',
-			'test suite finish',
+			'inner finish',
 			'describe finish',
 		]);
 	});
 
-	test('failing onFinish hook', async ({ onTestFail }) => {
+	test('failing onFinish hook', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, onFinish } from 'manten';
 
-			describe('failing onFinish', ({ onFinish }) => {
+			describe('failing onFinish', () => {
 				onFinish(() => {
 					console.log('executing hook');
 					throw new Error('onFinish error');

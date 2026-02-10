@@ -1,9 +1,9 @@
 import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from '../utils/expect-match-in-order.js';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('async', ({ test, describe }) => {
+describe('async', async () => {
 	test('synchronous', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
@@ -27,7 +27,7 @@ export default testSuite('async', ({ test, describe }) => {
 		expect(testProcess.stdout).toMatch('2 passed');
 	});
 
-	describe('asynchronous', async ({ test }) => {
+	await describe('asynchronous', async () => {
 		await test('sequential', async () => {
 			await using fixture = await createFixture({
 				'index.mjs': `

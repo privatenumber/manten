@@ -1,19 +1,18 @@
 import { describe } from 'manten';
 
-describe('manten', ({ runTestSuite }) => {
-	runTestSuite(import('./specs/abort-signal.js'));
-	runTestSuite(import('./specs/api.js'));
-	runTestSuite(import('./specs/async.js'));
-	runTestSuite(import('./specs/describe-timeout.js'));
-	runTestSuite(import('./specs/filtering.js'));
-	runTestSuite(import('./specs/hooks.js'));
-	runTestSuite(import('./specs/nesting.js'));
-	runTestSuite(import('./specs/parallel.js'));
-	runTestSuite(import('./specs/process-timeout.js'));
-	runTestSuite(import('./specs/reporting.js'));
-	runTestSuite(import('./specs/retry.js'));
-	runTestSuite(import('./specs/test-suites.js'));
-	runTestSuite(import('./specs/skip.js'));
-	runTestSuite(import('./specs/snapshots.js'));
-	runTestSuite(import('./specs/snapshots-serialize.js'));
+describe('manten', async () => {
+	await import('./specs/abort-signal.js');
+	await import('./specs/api.js');
+	await import('./specs/async.js');
+	await import('./specs/describe-timeout.js');
+	await import('./specs/filtering.js');
+	await import('./specs/hooks.js');
+	await import('./specs/nesting.js');
+	await import('./specs/parallel.js');
+	await import('./specs/process-timeout.js');
+	await import('./specs/reporting.js');
+	await import('./specs/retry.js');
+	await import('./specs/skip.js');
+	await import('./specs/snapshots.js');
+	await import('./specs/snapshots-serialize.js');
 });

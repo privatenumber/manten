@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { inspect } from 'node:util';
+import { asyncContext } from '../async-context.js';
 import { stableJsonStringify } from './format.js';
 
 // Serialize value to a stable string representation
@@ -159,6 +160,15 @@ export const getSnapshotSummary = () => ({
 	new: newSnapshots.size,
 	updated: updatedSnapshots.size,
 });
+
+// Standalone API that reads from ALS
+export const expectSnapshot = (value: unknown, name?: string): void => {
+	const store = asyncContext.getStore();
+	if (!store?.snapshotContext) {
+		throw new Error('expectSnapshot() must be called within a test()');
+	}
+	store.snapshotContext.expectSnapshot(value, name);
+};
 
 type Config = {
 	snapshotPath?: string;

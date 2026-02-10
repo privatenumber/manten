@@ -1,48 +1,19 @@
 import { setMaxListeners } from 'node:events';
 import type {
 	Describe,
-	Test,
-	onFinish,
+	DescribeCallback,
 	Callback,
 } from './types.js';
-import type {
-	TestSuite,
-	TestSuiteCallback,
-	InferCallback,
-} from './test-suite.js';
-import { createTest } from './create-test.js';
 import { consoleError } from './logger.js';
 import { waitAllPromises } from './utils/wait-all-promises.js';
-import { unwrapModule, type ModuleDefaultExport } from './utils/unwrap-module.js';
 import { createSemaphore } from './utils/semaphore.js';
 import { timeLimitFunction } from './utils/timer.js';
-
-export type ContextCallback = (api: ContextApi) => void;
-
-export type RunTestSuite = <
-	SuiteCallback extends TestSuiteCallback,
->(
-	testSuite:
-		TestSuite<SuiteCallback>
-		| Promise<ModuleDefaultExport<TestSuite<SuiteCallback>>>,
-	...args: InferCallback<SuiteCallback>['args']
-) => InferCallback<SuiteCallback>['returnType'];
-
-export type ContextApi = {
-	signal: AbortSignal;
-	describe: Describe;
-	test: Test;
-	runTestSuite: RunTestSuite;
-	onFinish: onFinish;
-	skip: (reason?: string) => void;
-};
+import { linkAbortSignal } from './utils/link-abort-signal.js';
+import { asyncContext } from './async-context.js';
 
 export type Context = {
-	api: ContextApi;
 	pendingTests: Promise<unknown>[];
-	callbacks: {
-		onFinish: Callback[];
-	};
+	onFinishCallbacks: Callback[];
 	concurrencyLimiter?: {
 		acquire: () => Promise<() => void>;
 		setLimit: (newLimit: number) => void;
@@ -53,99 +24,9 @@ export type Context = {
 	skipped: boolean;
 	skipReason?: string;
 	testsStarted: boolean;
-	run: (
-		callback: ContextCallback,
-		parentContext?: Context,
-	) => Promise<void>;
 };
 
-export type CreateContext = (
-	description?: string,
-	parallel?: boolean | number | 'auto',
-	timeout?: number,
-) => Context;
-
-export const createDescribe = (
-	prefix?: string,
-	parentContext?: Context,
-): Describe => (
-	(
-		description,
-		callback,
-		options,
-	) => {
-		if (prefix) {
-			description = `${prefix} ${description}`;
-		}
-
-		// Mark parent as having started tests/describes (SYNCHRONOUSLY)
-		if (parentContext) {
-			parentContext.testsStarted = true;
-		}
-
-		// Return async execution
-		return (async () => {
-			const context = createContext(description, options?.parallel, options?.timeout);
-
-			const executeDescribe = async () => {
-				// Check if parent has concurrency limiter
-				if (parentContext?.concurrencyLimiter) {
-					// Acquire slot
-					const release = await parentContext.concurrencyLimiter.acquire();
-					try {
-						await context.run(callback, parentContext);
-					} finally {
-						release();
-					}
-				} else {
-					await context.run(callback, parentContext);
-				}
-			};
-
-			await executeDescribe();
-		})();
-	}
-);
-
-export const createRunTestSuite = (
-	prefix?: string,
-	parentContext?: Context,
-): RunTestSuite => (
-	(
-		testSuite,
-		...args
-	) => {
-		// Mark parent as having started tests/test suites (SYNCHRONOUSLY)
-		if (parentContext) {
-			parentContext.testsStarted = true;
-		}
-
-		const executeTestSuite = () => {
-			const context = createContext(prefix);
-			return context.run(async () => {
-				const maybeTestSuiteModule = unwrapModule(await testSuite);
-				return maybeTestSuiteModule.apply(context, args);
-			}, parentContext);
-		};
-
-		// Check if parent has concurrency limiter
-		if (parentContext?.concurrencyLimiter) {
-			// Acquire slot
-			return parentContext.concurrencyLimiter.acquire().then(
-				release => executeTestSuite().finally(release),
-			);
-		}
-		return executeTestSuite();
-	}
-);
-
-// Top-level instances (for use when no parent context)
-const topLevelTest = createTest();
-const topLevelDescribe = createDescribe();
-const topLevelRunTestSuite = createRunTestSuite();
-
-export const createContext: CreateContext = (
-	description?: string,
+const createContext = (
 	parallel?: boolean | number | 'auto',
 	timeout?: number,
 ): Context => {
@@ -173,133 +54,142 @@ export const createContext: CreateContext = (
 	// when many tests attach to the parent signal for cleanup
 	setMaxListeners(0, abortController.signal);
 
-	const context = {
+	return {
 		pendingTests: [],
-		callbacks: {
-			onFinish: [],
-		},
+		onFinishCallbacks: [],
 		concurrencyLimiter,
 		abortController,
 		timeout,
 		skipped: false,
 		skipReason: undefined,
 		testsStarted: false,
-		run: async (
-			callback: ContextCallback,
-			parentContext?: Context,
-		) => {
-			// Inherit skip state from parent
-			if (parentContext?.skipped) {
-				context.skipped = true;
-				context.skipReason = parentContext.skipReason;
-			}
+	};
+};
 
-			// Listen to parent abort signal
-			let handleParentAbort: (() => void) | undefined;
-			if (parentContext) {
-				handleParentAbort = () => {
-					if (!abortController.signal.aborted) {
-						abortController.abort(parentContext.abortController.signal.reason);
-					}
-				};
-				parentContext.abortController.signal.addEventListener('abort', handleParentAbort);
+const runDescribe = async (
+	context: Context,
+	prefix: string,
+	callback: DescribeCallback,
+	parentContext?: Context,
+) => {
+	// Inherit skip state from parent
+	if (parentContext?.skipped) {
+		context.skipped = true;
+		context.skipReason = parentContext.skipReason;
+	}
 
-				// Check if parent already aborted (missed the event)
-				if (parentContext.abortController.signal.aborted) {
-					handleParentAbort();
-				}
-			}
+	const unlinkAbort = parentContext
+		? linkAbortSignal(context.abortController, parentContext.abortController.signal)
+		: undefined;
 
+	try {
+		const inProgress = (async () => {
+			// Wrap callback in AsyncLocalStorage so test/describe/etc.
+			// can auto-detect the active context
+			await asyncContext.run(
+				{
+					prefix,
+					context,
+				},
+				() => callback({ signal: context.abortController.signal }),
+			);
+			await waitAllPromises(context.pendingTests);
+		})();
+
+		if (parentContext) {
+			parentContext.pendingTests.push(inProgress);
+		}
+
+		// Apply timeout if specified
+		await timeLimitFunction(inProgress, context.timeout, context.abortController);
+	} catch (error) {
+		consoleError(error);
+		process.exitCode = 1;
+	} finally {
+		unlinkAbort?.();
+
+		if (!context.abortController.signal.aborted) {
+			context.abortController.abort();
+		}
+
+		// Clean up auto interval if it exists
+		if (context.concurrencyLimiter) {
+			context.concurrencyLimiter.cleanup();
+		}
+
+		for (const onFinishCallback of context.onFinishCallbacks) {
 			try {
-				const inProgress = (async () => {
-					await callback(context.api);
-					await waitAllPromises(context.pendingTests);
-				})();
-
-				if (parentContext) {
-					parentContext.pendingTests.push(inProgress);
-				}
-
-				// Apply timeout if specified
-				await timeLimitFunction(inProgress, timeout, abortController);
+				await onFinishCallback();
 			} catch (error) {
 				consoleError(error);
 				process.exitCode = 1;
-			} finally {
-				// Clean up parent listener to prevent memory leak
-				if (parentContext && handleParentAbort) {
-					parentContext.abortController.signal.removeEventListener('abort', handleParentAbort);
-				}
-
-				// Abort controller if not already aborted
-				if (!abortController.signal.aborted) {
-					abortController.abort();
-				}
-
-				// Clean up auto interval if it exists
-				if (concurrencyLimiter) {
-					concurrencyLimiter.cleanup();
-				}
-
-				for (const onFinish of context.callbacks.onFinish) {
-					try {
-						await onFinish();
-					} catch (error) {
-						consoleError(error);
-						process.exitCode = 1;
-					}
-				}
 			}
-		},
-	} as unknown as Context;
-
-	context.api = {
-		signal: abortController.signal,
-		test: (
-			description
-				? createTest(
-					`${description} ›`,
-					context,
-				)
-				: topLevelTest
-		),
-		describe: (
-			description
-				? createDescribe(
-					`${description} ›`,
-					context,
-				)
-				: topLevelDescribe
-		),
-		runTestSuite: (
-			description
-				? createRunTestSuite(
-					description,
-					context,
-				)
-				: topLevelRunTestSuite
-		),
-		onFinish: (callback) => {
-			context.callbacks.onFinish.push(callback);
-		},
-		skip: (reason?: string) => {
-			if (context.testsStarted) {
-				throw new Error(
-					'skip() must be called before any tests or nested describes run. '
-					+ 'Move skip() to the beginning of the describe callback.',
-				);
-			}
-			context.skipped = true;
-			context.skipReason = reason;
-		},
-	};
-
-	return context;
+		}
+	}
 };
 
-// Re-export for backward compatibility with top-level-context.ts
-export {
-	topLevelTest as test,
-	topLevelDescribe as describe,
-	topLevelRunTestSuite as runTestSuite,
+export const describe: Describe = (description, callback, options) => {
+	const store = asyncContext.getStore();
+
+	if (store?.prefix) {
+		description = `${store.prefix} ${description}`;
+	}
+
+	// Mark parent as having started tests/describes (SYNCHRONOUSLY)
+	const parentContext = store?.context;
+	if (parentContext) {
+		parentContext.testsStarted = true;
+	}
+
+	const prefix = description ? `${description} ›` : '';
+
+	return (async () => {
+		const context = createContext(options?.parallel, options?.timeout);
+
+		if (parentContext?.concurrencyLimiter) {
+			const release = await parentContext.concurrencyLimiter.acquire();
+			try {
+				await runDescribe(context, prefix, callback, parentContext);
+			} finally {
+				release();
+			}
+		} else {
+			await runDescribe(context, prefix, callback, parentContext);
+		}
+	})();
+};
+
+// Standalone APIs that read from ALS
+
+export const onFinish = (callback: Callback): void => {
+	const store = asyncContext.getStore();
+	if (!store?.context) {
+		throw new Error('onFinish() must be called within a describe()');
+	}
+	store.context.onFinishCallbacks.push(callback);
+};
+
+export const skip = (reason?: string): void => {
+	const store = asyncContext.getStore();
+	if (!store) {
+		throw new Error('skip() must be called within a describe() or test()');
+	}
+
+	// Test-level skip (throws SkipError)
+	if (store.testSkip) {
+		store.testSkip(reason);
+	}
+
+	// Describe-level skip
+	if (!store.context) {
+		throw new Error('skip() must be called within a describe() or test()');
+	}
+	if (store.context.testsStarted) {
+		throw new Error(
+			'skip() must be called before any tests or nested describes run. '
+			+ 'Move skip() to the beginning of the describe callback.',
+		);
+	}
+	store.context.skipped = true;
+	store.context.skipReason = reason;
 };

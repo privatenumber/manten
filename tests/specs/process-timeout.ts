@@ -1,9 +1,11 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import {
+	describe, test, expect, onTestFail,
+} from 'manten';
 
-export default testSuite('setProcessTimeout', ({ test }) => {
-	test('kills process and reports pending tests', async ({ onTestFail }) => {
+describe('setProcessTimeout', () => {
+	test('kills process and reports pending tests', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { test, setProcessTimeout } from 'manten';
@@ -42,7 +44,7 @@ export default testSuite('setProcessTimeout', ({ test }) => {
 		expect(testProcess.stdout).toMatch('2 pending');
 	});
 
-	test('does not prevent early exit on success', async ({ onTestFail }) => {
+	test('does not prevent early exit on success', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
 			import { test, setProcessTimeout } from 'manten';

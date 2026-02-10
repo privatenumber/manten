@@ -1,18 +1,18 @@
 import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from '../utils/expect-match-in-order.js';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
 // Snapshot tests verify that the snapshot functionality works correctly.
 // Snapshots are now saved to a single global file using synchronous writes on process exit.
 // Values are serialized using util.inspect() with sorted keys for deterministic output.
-export default testSuite('Snapshots', ({ test }) => {
+describe('Snapshots', () => {
 	test('Creates new snapshots on first run', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					const data = { foo: 'bar', count: 42 };
 					expectSnapshot(data);
 					expectSnapshot('simple string');
@@ -39,9 +39,9 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Compares with existing snapshots', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					const data = { foo: 'bar', count: 42 };
 					expectSnapshot(data);
 				});
@@ -65,9 +65,9 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Fails when snapshot doesn\'t match', async () => {
 		const fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					const data = { foo: 'baz', count: 100 };  // Different values
 					expectSnapshot(data);
 				});
@@ -95,9 +95,9 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Updates snapshots with environment variable', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					const data = { foo: 'updated', count: 999 };
 					expectSnapshot(data);
 				});
@@ -131,9 +131,9 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Named snapshots', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					expectSnapshot({ data: 1 }, 'first custom name');
 					expectSnapshot({ data: 2 }, 'second custom name');
 				});
@@ -158,14 +158,14 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Multiple tests with multiple snapshots', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('first test', async ({ expectSnapshot }) => {
+				test('first test', async () => {
 					expectSnapshot('first-1');
 					expectSnapshot('first-2');
 				});
 
-				test('second test', async ({ expectSnapshot }) => {
+				test('second test', async () => {
 					expectSnapshot('second-1');
 					expectSnapshot('second-2');
 					expectSnapshot('second-3');
@@ -201,11 +201,11 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Custom snapshot path', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test, configure } from 'manten';
+				import { test, expectSnapshot, configure } from 'manten';
 
 				configure({ snapshotPath: 'custom-snapshots.snap' });
 
-				test('snapshot test', async ({ expectSnapshot }) => {
+				test('snapshot test', async () => {
 					expectSnapshot('custom location');
 				});
 			`,
@@ -228,9 +228,9 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Handles sparse arrays', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('sparse array snapshot', ({ expectSnapshot }) => {
+				test('sparse array snapshot', () => {
 					const sparse = [1, , 3]; // Sparse array with hole at index 1
 					sparse.length = 5; // Extend with more holes
 					expectSnapshot(sparse);
@@ -266,16 +266,16 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Same test names in different describe blocks are allowed', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { describe, test } from 'manten';
+				import { describe, test, expectSnapshot } from 'manten';
 
-				describe('Group A', ({ test }) => {
-					test('same name', ({ expectSnapshot }) => {
+				describe('Group A', () => {
+					test('same name', () => {
 						expectSnapshot('value from Group A');
 					});
 				});
 
-				describe('Group B', ({ test }) => {
-					test('same name', ({ expectSnapshot }) => {
+				describe('Group B', () => {
+					test('same name', () => {
 						expectSnapshot('value from Group B');
 					});
 				});
@@ -310,19 +310,19 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Throws error on duplicate test titles in same describe across files', async () => {
 		await using fixture = await createFixture({
 			'test1.mjs': `
-				import { describe } from 'manten';
+				import { describe, test, expectSnapshot } from 'manten';
 
-				describe('Same Group', ({ test }) => {
-					test('duplicate name', ({ expectSnapshot }) => {
+				describe('Same Group', () => {
+					test('duplicate name', () => {
 						expectSnapshot('value from file 1');
 					});
 				});
 			`,
 			'test2.mjs': `
-				import { describe } from 'manten';
+				import { describe, test, expectSnapshot } from 'manten';
 
-				describe('Same Group', ({ test }) => {
-					test('duplicate name', ({ expectSnapshot }) => {
+				describe('Same Group', () => {
+					test('duplicate name', () => {
 						expectSnapshot('value from file 2');
 					});
 				});
@@ -354,16 +354,16 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Throws error on duplicate test titles across files', async () => {
 		await using fixture = await createFixture({
 			'test1.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('duplicate name', ({ expectSnapshot }) => {
+				test('duplicate name', () => {
 					expectSnapshot('value from file 1');
 				});
 			`,
 			'test2.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
-				test('duplicate name', ({ expectSnapshot }) => {
+				test('duplicate name', () => {
 					expectSnapshot('value from file 2');
 				});
 			`,
@@ -394,10 +394,10 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Throws error when configure is called after snapshots are loaded', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test, configure } from 'manten';
+				import { test, expectSnapshot, configure } from 'manten';
 
 				// Run a test that loads snapshots
-				test('first test', ({ expectSnapshot }) => {
+				test('first test', () => {
 					expectSnapshot('value');
 				});
 
@@ -435,11 +435,11 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Throws error on duplicate snapshot keys', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
 				// Two tests with the same name across different files would normally
 				// cause duplicate keys since we use a single global snapshot file
-				test('duplicate test name', async ({ expectSnapshot }) => {
+				test('duplicate test name', async () => {
 					expectSnapshot('value 1');
 					expectSnapshot('value 2', 'duplicate test name 1'); // This will duplicate the auto-generated key
 				});
@@ -467,10 +467,10 @@ export default testSuite('Snapshots', ({ test }) => {
 	test('Retried tests use same snapshot keys', async () => {
 		await using fixture = await createFixture({
 			'test.mjs': `
-				import { test } from 'manten';
+				import { test, expectSnapshot } from 'manten';
 
 				let attempt = 0;
-				test('flaky test', async ({ expectSnapshot }) => {
+				test('flaky test', async () => {
 					attempt++;
 
 					// These should use "flaky test 1" and "flaky test 2"

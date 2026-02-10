@@ -1,8 +1,8 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('filtering', ({ test }) => {
+describe('filtering', () => {
 	test('filters by substring match', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
@@ -50,14 +50,14 @@ export default testSuite('filtering', ({ test }) => {
 	test('filters with describe prefix', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			await describe('API', ({ test }) => {
+			await describe('API', () => {
 				test('GET /users', () => {});
 				test('POST /users', () => {});
 			});
 
-			await describe('Database', ({ test }) => {
+			await describe('Database', () => {
 				test('connect', () => {});
 			});
 			`,
@@ -294,8 +294,8 @@ export default testSuite('filtering', ({ test }) => {
 			'test.mjs': `
 				import { describe, test } from 'manten';
 
-				describe('Outer', ({ describe, test }) => {
-					describe('Inner', ({ test }) => {
+				describe('Outer', () => {
+					describe('Inner', () => {
 						test('deeply nested test', () => {});
 					});
 					test('outer test', () => {});

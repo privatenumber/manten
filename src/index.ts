@@ -3,9 +3,9 @@ export type {
 	Describe,
 } from './types.js';
 export {
-	test, describe, runTestSuite, type Context,
+	describe, onFinish, skip,
 } from './context.js';
-export { testSuite, type TestSuite } from './test-suite.js';
+export { test, onTestFail, onTestFinish } from './create-test.js';
+export { expectSnapshot, configure } from './snapshot/snapshots.js';
 export { setProcessTimeout } from './process-timeout.js';
-export { configure } from './snapshot/snapshots.js';
 export { expect } from 'expect';

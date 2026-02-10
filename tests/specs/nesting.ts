@@ -1,23 +1,23 @@
 import { createFixture } from 'fs-fixture';
 import { installManten, node } from '../utils/spec-helpers.js';
-import { testSuite, expect } from 'manten';
+import { describe, test, expect } from 'manten';
 
-export default testSuite('nesting', ({ test }) => {
+describe('nesting', () => {
 	test('deep context nesting', async () => {
 		await using fixture = await createFixture({
 			'index.mjs': `
-			import { describe } from 'manten';
+			import { describe, test } from 'manten';
 
-			await describe('Level 1', async ({ test, describe }) => {
+			await describe('Level 1', async () => {
 				test('Test at level 1', () => {});
 
-				await describe('Level 2', async ({ test, describe }) => {
+				await describe('Level 2', async () => {
 					test('Test at level 2', () => {});
 
-					await describe('Level 3', async ({ test, describe }) => {
+					await describe('Level 3', async () => {
 						test('Test at level 3', () => {});
 
-						await describe('Level 4', ({ test }) => {
+						await describe('Level 4', () => {
 							test('Test at level 4', () => {});
 						});
 					});
