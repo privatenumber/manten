@@ -180,7 +180,7 @@ test('heavy multi-step flow', async ({ signal }) => {
 }, 10_000)
 ```
 
-### Combining Signals (Node.js 20+)
+### Combining Signals
 
 If you need both the test timeout *and* your own cancellation logic, combine them with `AbortSignal.any()`:
 
