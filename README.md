@@ -3,903 +3,406 @@
     <!-- LICENSE https://www.ac-illust.com/main/detail.php?id=22468077 -->
 </p>
 
-<h1 align="center">満点 (manten)</h1>
+<h1 align="center">manten</h1>
 
-**A tiny, async-first testing library for Node.js**
+Tests are scripts. Not a framework.
 
-Manten is designed for speed with minimal overhead—just `2.3 kB` and zero dependencies beyond Jest's assertion library. Tests run immediately as plain JavaScript with native `async`/`await` flow control, giving you full control over concurrency without the complexity of a test runner.
+Write tests in TypeScript, run with `node test.ts`.
 
-### Features
-- **Tiny**: `2.3 kB` minified
-- **Fast**: No test discovery overhead, tests run as plain Node.js scripts
-- **Async-first**: Native `async`/`await` for sequential or concurrent execution
-- **Zero config**: No test runner, no transforms—just Node.js
-- **Full control**: Manage async flow exactly how you want
-- **Strongly typed**: Full TypeScript support
-- **Snapshot testing**: Built-in snapshot support with automatic serialization
+No runner, no overhead — just **16 kB**.
+
+```sh
+$ node ./tests/index.ts
+
+12:34:56 ✔ adds numbers
+12:34:56 ✔ async operation (52ms)
+12:34:56 ✔ Auth › login succeeds
+12:34:56 ✔ Auth › logout clears session
+12:34:56 ✖ broken test
+
+523ms
+4 passed
+1 failed
+```
+
+`✔` passed · `✖` failed · `○` skipped · `•` pending (process exited before test finished)
 
 ## Install
+
 ```sh
 npm i -D manten
 ```
 
+## Why manten?
+
+### No runner, just Node
+
+Test files are plain scripts — run them directly:
+
+```sh
+node tests/test.ts
+```
+
+No file discovery, no config files, no abstraction layers. Node.js startup time, nothing more.
+
+### You already know the API
+
+sequential = `await`
+
+concurrent = Remove `await`
+
+That's the entire concurrency model.
+
+```ts
+await test('first', async () => { /* ... */ }) // waits
+
+test('second', async () => { /* ... */ }) // runs immediately
+
+test('third', async () => { /* ... */ }) // runs with second
+```
+
+### Standalone imports
+
+Every API is a standalone import — no callback destructuring:
+
+```ts
+import {
+    test, describe, expect, skip, onTestFinish
+} from 'manten'
+```
+
+Each function automagically knows which test or group it belongs to.
+
+### Tiny
+
+One dependency ([`expect`](https://www.npmjs.com/package/expect) for assertions — swap it for any assertion library).
+
 ## Quick start
 
 ```ts
-// tests/test.mjs
+// tests/test.ts
 import { test, expect } from 'manten'
 
-// Tests run immediately—no collection phase
 test('adds numbers', () => {
     expect(1 + 1).toBe(2)
 })
 
-// Control async flow with await
-await test('async test', async () => {
+test('async operation', async () => {
     const result = await fetchData()
     expect(result).toBeDefined()
 })
 ```
 
-Run directly with Node.js:
 ```sh
-node tests/test.mjs
+node tests/test.ts
 ```
 
-**That's it.** No configuration, no test runner, no setup. Just write tests and run them.
+> [!TIP]
+> Node.js 22.6+ runs TypeScript natively — no loaders needed.
 
-## Usage
+## Core concepts
 
-### Writing tests
-Tests execute immediately when `test()` is called—there's no collection phase or scheduling overhead.
+### Async flow control
+
+Tests execute immediately when `test()` is called. Use `await` to control ordering:
 
 ```ts
-import { test, expect } from 'manten'
+// Sequential
+await test('step 1', async () => { /* ... */ })
+await test('step 2', async () => { /* ... */ }) // runs after step 1
 
-test('Test A', () => {
-    expect(somethingSync()).toBe(1)
-})
-
-test('Test B', () => {
-    expect(somethingSync()).toBe(2)
-})
+// Concurrent
+test('independent A', async () => { /* ... */ })
+test('independent B', async () => { /* ... */ }) // runs with A
 ```
 
-### Assertions
-Jest's [`expect`](https://www.npmjs.com/package/expect) is exported as the default assertion library. Read the docs [here](https://jestjs.io/docs/expect).
-
-Feel free to use a different assertion library, such as [Node.js Assert](https://nodejs.org/api/assert.html) or [Chai](https://www.chaijs.com/).
-
-
-### Grouping tests
-Group tests with `describe()`. All APIs are standalone imports—`test`, `describe`, hooks, etc. automatically know which group they belong to via async context.
+### Grouping with describe
 
 ```ts
 import { describe, test } from 'manten'
 
-describe('Group description', () => {
-    test('Test A', () => {
-        // ...
-    })
-
-    test('Test B', () => {
-        // ...
-    })
-})
-```
-
-`describe()` groups are infinitely nestable:
-
-```ts
-describe('Group description', () => {
-    test('Test A', () => {
-        // ...
-    })
-
-    describe('Nested group', () => {
-        // ...
-    })
-})
-```
-
-### Asynchronous tests
-Manten is built for async. You control execution flow with native `async`/`await`—no configuration needed.
-
-#### Sequential: await each test
-```ts
-await test('Test A', async () => {
-    await somethingAsync()
+await describe('Auth', () => {
+    test('login', async () => { /* ... */ }) // Auth › login
+    test('logout', async () => { /* ... */ }) // Auth › logout
 })
 
-// Runs after Test A completes
-await test('Test B', async () => {
-    await somethingAsync()
-})
+// Runs after both Auth tests complete
+test('next', () => { /* ... */ })
 ```
 
-#### Concurrent: omit await
-```ts
-test('Test A', async () => {
-    await somethingAsync()
-})
-
-// Runs immediately while Test A is still running
-test('Test B', async () => {
-    await somethingAsync()
-})
-```
-
-**This is the key design principle:** native JavaScript async control with zero overhead. No worker pools, no queue management—just the primitives you already know.
-
-### Timeouts & Cleanup
-
-Set a max test duration by passing a timeout (in milliseconds) as the third argument:
-
-```ts
-test('should finish within 1s', async () => {
-    await slowTest()
-}, 1000)
-```
-
-When a timeout is set, the test receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal). This signal lets you stop in-flight work—fetches, watchers, timers—once the time limit hits.
-
-Asynchronous operations in JavaScript don't provide a built-in way to terminate them from the outside, so cancellation is handled cooperatively. `AbortSignal` is the standard mechanism for that: Manten marks the test as aborted, and your code responds by shutting things down cleanly.
-
-### Example: Graceful Cleanup
-
-```ts
-test('fetch with timeout', async ({ signal }) => {
-    // Pass the signal to APIs that support cancellation
-    await fetch('https://api.example.com', { signal })
-}, 5000)
-
-test('custom cleanup', async ({ signal }) => {
-    const watcher = startFileWatcher()
-
-    // Close the watcher when the test times out
-    signal.addEventListener('abort', () => watcher.close())
-
-    await watcher.waitForChange()
-}, 3000)
-```
-
-### Early Exit Pattern (`throwIfAborted`)
-
-For multi-step tests, call `signal.throwIfAborted()` between expensive operations.
-If the timeout has fired, execution stops immediately and later steps won't run.
-
-```ts
-test('heavy multi-step flow', async ({ signal }) => {
-    await generateBigFile()
-    signal.throwIfAborted()
-
-    await uploadFile()
-    signal.throwIfAborted()
-
-    await verifyUpload()
-}, 10_000)
-```
-
-### Combining Signals
-
-If you need both the test timeout *and* your own cancellation logic, combine them with `AbortSignal.any()`:
-
-```ts
-test('user cancellation + timeout', async ({ signal }) => {
-    const userCancel = new AbortController()
-
-    // Merge both signals into one
-    const combined = AbortSignal.any([signal, userCancel.signal])
-
-    await doWork({ signal: combined })
-}, 5000)
-```
-
-#### Retries
-Retry flaky tests automatically using the options object:
-
-```ts
-test('flaky API call', async () => {
-    await unreliableAPI()
-}, {
-    timeout: 5000,
-    retry: 3 // Will retry up to 3 times on failure
-})
-```
-
-When a test passes after retries, the output shows which attempt succeeded (e.g., `✔ test (2/3)`).
-
-### Grouping async tests
-Manten tracks all tests in a `describe()` block, so awaiting the group waits for all child tests—even concurrent ones.
-
-```ts
-await describe('Group A', () => {
-    test('Test A1', async () => {
-        await something()
-    })
-
-    // Test A2 runs concurrently with A1
-    test('Test A2', async () => {
-        await somethingElse()
-    })
-})
-
-// Only runs after BOTH tests complete
-test('Test B', () => {
-    // ...
-})
-```
-
-This gives you fine-grained control: run tests concurrently within a group, then await the group to ensure completion before the next step.
-
-### Group Timeouts
-
-A group timeout puts a single deadline on an entire `describe()` block — setup + all tests. If everything finishes before the limit, nothing changes. If not, the whole group is aborted cleanly.
-
-```ts
-describe('API Suite', () => {
-    test('endpoint 1', async () => { /* ... */ })
-    test('endpoint 2', async () => { /* ... */ })
-    test('endpoint 3', async () => { /* ... */ })
-}, { timeout: 10_000 }) // All tests + setup must finish within 10s
-```
-
-The timer starts as soon as the `describe` callback begins. If the limit is hit, every active test in the group receives an abort signal. Individual tests can still define their own timeouts — whichever is stricter wins. This makes group timeouts useful for bounding entire suites, integration flows, or anything with heavy setup/teardown.
-
-You can also hook into the group's `signal` for cleanup:
-
-```ts
-describe('Database tests', async ({ signal }) => {
-    const database = await connectDatabase()
-
-    signal.addEventListener('abort', () => database.close())
-
-    test('query', async ({ signal: testSignal }) => {
-        await database.query('...', { signal: testSignal })
-    })
-}, { timeout: 30_000 })
-```
-
-Nested groups follow the same rule: the tightest timeout always applies.
-
-```ts
-describe('Level 1', () => {
-    describe('Level 2', () => {
-        test('slow test', async ({ signal }) => {
-            await slowOp({ signal })
-        }, 5000)
-    }, { timeout: 2000 }) // This wins
-}, { timeout: 10_000 })
-```
-
-Here, the test is aborted after **2 seconds** because the group's limit is stricter than the test's own setting.
-
-### Process-Level Timeout
-
-In CI, it helps to put a firm deadline on the *entire* test run. A stuck async task or open handle can keep Node.js alive long past when everything should be done, and most CI systems will eventually kill the job from the outside—abruptly, with no chance for manten to report what was still pending.
-
-`setProcessTimeout` gives you a controlled version of that behavior:
-
-```ts
-import { setProcessTimeout } from 'manten'
-
-// Kill the process if tests don't complete within 10 minutes
-setProcessTimeout(10 * 60 * 1000)
-```
-
-If your suite finishes in time, the process exits normally. If it doesn't, Manten logs a clear timeout message, exits with code 1, and still runs its own shutdown hooks so any unfinished tests are reported before the process dies. You get a clean, informative failure instead of a silent multi-hour hang.
-
-### Controlling concurrency
-
-Limit how many tests run simultaneously within a `describe()` block using the `parallel` option. This is useful for preventing resource exhaustion when tests hit databases, APIs, or file systems.
-
-```ts
-describe('Database tests', () => {
-    test('Query 1', async () => { /* ... */ })
-    test('Query 2', async () => { /* ... */ })
-    test('Query 3', async () => { /* ... */ })
-    test('Query 4', async () => { /* ... */ })
-}, { parallel: 2 }) // Only 2 tests run at a time
-```
-
-#### Parallel options
-
-- `parallel: false` — Sequential execution (one at a time)
-- `parallel: true` — Unbounded concurrency (all tests run simultaneously)
-- `parallel: N` — Fixed limit (up to N tests run concurrently)
-- `parallel: 'auto'` — Dynamic limit based on system load (adapts to CPU cores and load average)
-
-The limit applies to **immediate children only** (direct `test()` and `describe()` calls). Nested describes have independent limits.
-
-**Note on `parallel: 'auto'`:** This feature uses `os.loadavg()` to monitor system load, which is only available on Unix-like systems (macOS, Linux). On Windows, `loadavg()` always returns `[0, 0, 0]`, so `'auto'` behaves identically to setting `parallel` to the number of CPU cores (no dynamic throttling).
-
-#### Explicit await bypasses parallel limiting
-
-Tests that you explicitly `await` run immediately, bypassing the parallel queue:
-
-```ts
-describe('Mixed', async () => {
-    await test('Setup', async () => {
-        // Runs first
-    })
-
-    test('Test 1', async () => { /* ... */ })
-    test('Test 2', async () => { /* ... */ })
-    // Test 1 and 2 respect the parallel limit
-
-    await test('Teardown', async () => {
-        // Waits for Test 1 and 2, then runs
-    })
-}, { parallel: 2 })
-```
-
-This gives you fine control: use the parallel limit for bulk tests, but `await` specific tests for setup/teardown that must run in sequence.
+Awaiting a group waits for all children. Groups nest infinitely.
 
 ### Splitting tests across files
 
-Use dynamic imports inside `describe()` to organize tests into separate files. Tests in the imported file automatically nest under the parent group:
+Import files inside `describe()` — their tests automatically nest under the parent group:
 
 ```ts
 // tests/index.ts
 import { describe } from 'manten'
 
-describe('Auth', async () => {
-    await import('./auth-login.ts')
-    await import('./auth-logout.ts')
+describe('my-app', async () => {
+    import('./auth.ts')
+    import('./api.ts')
+    import('./utils.ts')
+
+    // Or add `await` to run files sequentially
 })
 ```
 
 ```ts
-// tests/auth-login.ts
-import { test, expect } from 'manten'
+// tests/auth.ts
+import { describe, test, expect } from 'manten'
 
-test('logs in with valid credentials', async () => {
-    // Automatically grouped under "Auth ›"
+describe('Authentication', () => {
+    test('login', () => { /* ... */ })
+    test('logout', () => { /* ... */ })
+    test('refresh token', () => { /* ... */ })
+})
+// Output: my-app › Authentication › login
+//         my-app › Authentication › logout
+//         my-app › Authentication › refresh token
+```
+
+Each file works standalone too — `node tests/auth.ts` runs just that file. The entry point is your test runner, written in plain JavaScript.
+
+### Watch mode
+
+```sh
+node --watch tests/index.ts
+```
+
+Built into [Node.js](https://nodejs.org/api/cli.html#--watch) (stable since v22). Watches all imported files — change any test file, tests re-run automatically.
+
+## Features
+
+### Timeouts & abort signals
+
+Pass a timeout (ms) as the third argument. The test receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) for cooperative cancellation:
+
+```ts
+test('fetch with timeout', async ({ signal }) => {
+    await fetch('https://api.example.com', { signal })
+}, 5000)
+```
+
+For multi-step tests, use [`signal.throwIfAborted()`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted) between operations. Combine with your own signals using [`AbortSignal.any()`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static).
+
+### Retries
+
+```ts
+test('flaky API', async () => {
+    await unreliableAPI()
+}, {
+    timeout: 5000,
+    retry: 3
 })
 ```
+
+Output shows which attempt succeeded: `✔ flaky API (2/3)`.
 
 ### Hooks
 
-#### Test hooks
-
-All hooks are standalone imports. Call them inside a `test()` to register callbacks for the current test:
-
-##### `onTestFail`
-
-Debug tests by logging relevant information when a test fails.
-
 ```ts
-import { test, onTestFail } from 'manten'
+import { test, onTestFail, onTestFinish } from 'manten'
 
-test('Test', async () => {
-    const fixture = await createFixture()
-    onTestFail(async (error) => {
-        console.log(error)
-        console.log('inspect directory:', fixture.path)
-    })
-
-    throw new Error('Test failed')
+test('with cleanup', async () => {
+    const resource = await acquire()
+    onTestFinish(() => resource.cleanup()) // runs after test (pass or fail)
+    onTestFail(error => console.log('Debug:', error))
 })
 ```
 
-
-##### `onTestFinish`
-
-Execute cleanup code after the test finishes, even if it errors.
-
-```ts
-import { test, onTestFinish } from 'manten'
-
-test('Test', async () => {
-    const fixture = await createFixture()
-    onTestFinish(async () => await fixture.remove())
-
-    throw new Error('Test failed')
-})
-```
-
-#### Describe hooks
-
-##### `onFinish`
-
-Similarly to `onTestFinish`, you can execute cleanup code after all tests in a `describe()` finish.
+`onFinish` runs after all tests in a `describe()`:
 
 ```ts
 import { describe, test, onFinish } from 'manten'
 
-describe('Describe', async () => {
-    const fixture = await createFixture()
-    onFinish(async () => await fixture.remove())
+describe('Database', async () => {
+    const database = await connect()
+    onFinish(() => database.close())
 
-    test('Check fixture', () => {
-        // ...
-    })
+    test('query', () => { /* ... */ })
 })
 ```
 
-### Snapshot Testing
-
-Capture and compare values across test runs. Snapshots are stored in `.manten.snap` and saved on process exit.
+### Skipping
 
 ```ts
-import { test, expectSnapshot } from 'manten'
+import { test, skip } from 'manten'
 
-test('user operations', () => {
-    // Auto-named: "user operations 1", "user operations 2", etc.
-    expectSnapshot(getUser())
-    expectSnapshot(getUserPermissions())
-
-    // Named snapshots (recommended) - order-independent and refactor-safe
-    expectSnapshot(getUser(), 'initial user state')
-    expectSnapshot(getUserPermissions(), 'initial permissions')
-})
-```
-
-**Update snapshots:** `MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.mjs`
-
-**Configure path:** Call `configure({ snapshotPath: 'custom.snap' })` before any tests run, or set `MANTEN_SNAPSHOT_PATH` env var.
-
-**Important:**
-- Test names must be unique across all files (duplicates throw an error)
-- Without named snapshots, reordering `expectSnapshot` calls breaks comparisons
-- Serialization uses `util.inspect` with sorted keys (handles objects, arrays, Maps, Sets, Dates, circular refs, etc.)
-
-> [!WARNING]
-> Snapshot serialization relies on Node.js [`util.inspect`](https://nodejs.org/api/util.html#utilinspectobject-options), which may produce different output across Node versions. If you upgrade Node and snapshots fail, re-run with `MANTEN_UPDATE_SNAPSHOTS=1` to regenerate them.
-
-### Skipping tests
-
-Skip tests dynamically by calling `skip()` from within the test. This is useful when a test should be skipped based on runtime conditions (environment variables, system capabilities, etc.).
-
-```ts
-import { test, expect, skip } from 'manten'
-
-test('platform-specific feature', () => {
+test('linux only', () => {
     if (process.platform !== 'linux') {
         skip('Only runs on Linux')
     }
-
-    // Test code for Linux-specific feature
-    expect(linuxOnlyFeature()).toBe(true)
+    // ...
 })
 ```
 
-When a test is skipped:
-- It's logged with a `○` symbol and counted separately in the summary
-- Exit code is unaffected (skips don't cause failures)
-- `onTestFinish` hooks still run (allowing cleanup of resources allocated before `skip()` was called)
-- `onTestFail` hooks do not run (the test didn't fail)
-- Retry mechanism is bypassed (skipped tests are never retried)
-- Timeouts don't apply (skipping is immediate)
-
-```
-✔ Test A
-○ platform-specific feature
-✔ Test B
-
-2 passed
-1 skipped
-```
-
-The `skip()` function throws internally to stop execution, so any code after it won't run:
-
-```ts
-test('example', () => {
-    skip('reason')
-    console.log('This will never execute')
-})
-```
-
-If you allocate resources before skipping, use `onTestFinish` to clean them up:
-
-```ts
-test('conditional test', async () => {
-    const tempFile = await createTempFile()
-    onTestFinish(() => tempFile.cleanup()) // Always runs, even if skipped
-
-    if (!featureEnabled) {
-        skip('Feature disabled') // tempFile still gets cleaned up
-    }
-
-    // Test code using tempFile...
-})
-```
-
-#### Skipping describe groups
-
-Skip entire test groups by calling `skip()` in the describe callback:
+Skip entire groups — `skip()` must be called before any `test()` or nested `describe()`:
 
 ```ts
 describe('GPU tests', () => {
     if (!hasGPU) {
         skip('GPU not available')
     }
-
-    test('render shader', () => { /* ... */ }) // All skipped
-    test('compute pipeline', () => { /* ... */ }) // All skipped
-    test('texture sampling', () => { /* ... */ }) // All skipped
+    test('render shader', () => { /* ... */ }) // all skipped
 })
 ```
 
-All tests in the group will be marked as skipped and appear in the report:
-
-```
-○ GPU tests › render shader
-○ GPU tests › compute pipeline
-○ GPU tests › texture sampling
-
-0 passed
-3 skipped
-```
-
-**Important:** `skip()` must be called before any tests or nested describes run:
+### Snapshot testing
 
 ```ts
-describe('Invalid', () => {
-    test('runs first', () => { /* ... */ }) // ✅ Executes
+import { test, expectSnapshot } from 'manten'
 
-    skip('Too late!') // ❌ Throws error
+test('user state', () => {
+    // Named (recommended) — order-independent
+    expectSnapshot(getUser(), 'initial state')
+
+    // Auto-numbered — keys become "user state 1", "user state 2", etc.
+    expectSnapshot(getUser())
+    expectSnapshot(getPermissions())
 })
 ```
 
-The describe callback continues executing after `skip()` is called (unlike test skip, which throws). This allows all tests to register for visibility in the report:
+Snapshots are stored in `.manten.snap`. Update with `MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.ts`. Without named snapshots, reordering `expectSnapshot()` calls breaks comparisons.
+
+> [!WARNING]
+> Snapshots are serialized with [`util.inspect`](https://nodejs.org/api/util.html#utilinspectobject-options), which may produce different output across Node.js versions. If snapshots fail after upgrading Node, re-run with `MANTEN_UPDATE_SNAPSHOTS=1` to regenerate.
+
+### Concurrency limiting
 
 ```ts
-describe('Feature tests', () => {
-    if (!featureEnabled) {
-        skip('Feature disabled')
-        // Callback continues - tests below still register
-    }
-
-    test('test 1', () => { /* ... */ }) // Registers as skipped
-    test('test 2', () => { /* ... */ }) // Registers as skipped
-})
+describe('Database tests', () => {
+    test('query 1', async () => { /* ... */ })
+    test('query 2', async () => { /* ... */ })
+    test('query 3', async () => { /* ... */ })
+}, { parallel: 2 }) // max 2 concurrent
 ```
 
-Nested describes inherit the skip state from their parent:
+Options:
+- `false` (sequential)
+- `true` (unbounded)
+- `number` (limit)
+- `'auto'` (adapts to CPU load)
+
+Tests that you explicitly `await` run immediately, bypassing the parallel queue — useful for setup/teardown steps within a parallel group.
+
+### Group timeouts
 
 ```ts
-describe('Graphics', () => {
-    skip('No GPU available')
-
-    describe('2D', () => {
-        test('canvas', () => { /* ... */ }) // Skipped (parent skipped)
-        test('svg', () => { /* ... */ }) // Skipped (parent skipped)
-    })
-})
+describe('API suite', () => {
+    test('endpoint 1', async () => { /* ... */ })
+    test('endpoint 2', async () => { /* ... */ })
+}, { timeout: 10_000 })
 ```
 
-### Running a specific test
+Individual test timeouts still apply — whichever is stricter wins.
 
-To run a specific test, use the `TESTONLY` environment variable with a substring of the test's name. This is useful for debugging a single test in isolation without running the entire suite.
+### Process timeout
+
+Prevent stuck processes in CI:
+
+```ts
+import { setProcessTimeout } from 'manten'
+
+setProcessTimeout(10 * 60 * 1000) // kill after 10 minutes
+```
+
+### Filtering
+
+Run specific tests by substring match (case-sensitive). Matches against the full title including describe prefixes:
 
 ```sh
-TESTONLY='connects to database' node tests/test.mjs
+TESTONLY='login' node tests/test.ts
+TESTONLY='Auth' node tests/test.ts   # matches "Auth › login", "Auth › logout", etc.
 ```
-
-```js
-test('connects to database', () => {
-    // Only this test will run
-})
-
-test('disconnects from database', () => {
-    // Will NOT run
-})
-```
-
-This will run only the test (or tests) whose name includes the substring partial-test-name. Matching is case-sensitive.
-
-## Examples
-
-### Testing a script in different versions of Node.js
-```ts
-import getNode from 'get-node'
-import { execaNode } from 'execa'
-import { test } from 'manten'
-
-const nodeVersions = ['20', '22', '24', '26']
-
-nodeVersions.map(async (version) => {
-    const node = await getNode(version)
-    test(
-        `Works in Node.js ${node.version}`,
-        () => execaNode('./script.ts', { nodePath: node.path })
-    )
-})
-```
-
-### Running multiple test files
-Since there's no test runner, run multiple files using standard shell patterns:
-
-```sh
-# Run all test files
-node tests/*.mjs
-
-# Using tsx for TypeScript
-npx tsx tests/*.ts
-
-# Parallel execution with GNU parallel or xargs
-find tests -name "*.test.ts" | xargs -P 4 -n 1 npx tsx
-```
-
-You have full control over concurrency and execution order.
-
-### Understanding test output
-Manten outputs test results in real-time as they complete:
-
-```
-✔ Test A (45ms)
-✔ Group › Test B
-✖ Failed test
-
-134ms
-2 passed
-1 failed
-```
-
-- `✔` = Passed test
-- `✖` = Failed test
-- `•` = Incomplete test (if process exits before test finishes)
-- Time shown for tests taking >50ms
-- Retry attempts shown as `(2/5)` when using `retry` option
-- Test errors logged to stderr, results to stdout
-
-The final report is generated on `process.on('exit')`, so if the process crashes or is killed (<kbd>Ctrl+C</kbd>), any unfinished tests will be shown with the `•` symbol.
 
 ## API
 
-### test(name, testFunction, timeoutOrOptions?)
+### test(name, fn, timeoutOrOptions?)
 
-name: `string`
+Create and run a test. `fn` always receives `{ signal }` — an `AbortSignal` that aborts on timeout or when the parent group is aborted.
 
-testFunction: `(api?: { signal: AbortSignal }) => void | Promise<void>`
+- `timeoutOrOptions`: `number | { timeout?: number, retry?: number }`
+- Returns: `Promise<void>`
 
-timeoutOrOptions: `number | { timeout?: number, retry?: number }`
+### describe(name, fn, options?)
 
-Return value: `Promise<void>`
+Create a test group. `fn` always receives `{ signal }` — an `AbortSignal` that aborts on timeout or when the parent group is aborted.
 
-Create and run a test. Optionally pass a timeout (ms) or options object with `timeout` and `retry` settings. The callback receives an optional `{ signal }` that aborts when the test times out or the parent describe group is aborted.
+- `options`: `{ parallel?: boolean | number | 'auto', timeout?: number }`
+- Returns: `Promise<void>`
 
-### describe(description, callback, options?)
-description: `string`
+### expect(value)
 
-callback: `(api?: { signal: AbortSignal }) => void | Promise<void>`
-
-options: `{ parallel?: boolean | number | 'auto', timeout?: number }`
-
-Return value: `Promise<void>`
-
-Create a group of tests. The group tracks all child tests and waits for them to complete. Supports `parallel` for concurrency limiting and `timeout` for collective time limits. The callback receives an optional `{ signal }` that aborts when the group times out.
-
-### onTestFail(callback)
-
-callback: `(error: unknown) => void`
-
-Register a callback for when the current test fails. Must be called within a `test()`.
-
-### onTestFinish(callback)
-
-callback: `() => void | Promise<void>`
-
-Register a cleanup callback that runs after the current test completes (pass or fail). Must be called within a `test()`.
-
-### onFinish(callback)
-
-callback: `() => void | Promise<void>`
-
-Register a cleanup callback that runs after all tests in the current `describe()` complete. Must be called within a `describe()`.
-
-### skip(reason?)
-
-reason (optional): `string`
-
-Skip the current test or describe group. In a test, throws to stop execution immediately. In a describe, marks all subsequent tests as skipped. Must be called within a `test()` or `describe()`.
+Jest's [`expect`](https://jestjs.io/docs/expect). Or use [Node.js Assert](https://nodejs.org/api/assert.html), [Chai](https://www.chaijs.com/), etc.
 
 ### expectSnapshot(value, name?)
 
-value: `unknown`
+Compare against a stored snapshot. Creates one if none exists. Test names must be unique across all files — duplicates throw an error.
 
-name (optional): `string`
+### onTestFail(callback) · onTestFinish(callback)
 
-Compare a value against a stored snapshot. If no snapshot exists, creates one. Must be called within a `test()`. See [Snapshot Testing](#snapshot-testing).
+Hooks for the current test. Must be called within `test()`. Hook errors are logged but don't fail the test.
+
+### onFinish(callback)
+
+Cleanup hook for the current `describe()` group. Errors are logged and set `process.exitCode = 1`.
+
+### skip(reason?)
+
+Skip the current test or describe group.
 
 ### setProcessTimeout(ms)
-ms: `number`
 
-Return value: `void`
-
-Set a global timeout for the entire test process. If tests don't complete within the specified time, the process is forcibly terminated with exit code 1. The timer uses `.unref()`, so it won't prevent the process from exiting naturally if tests complete early. Pending tests are automatically reported when the timeout fires.
+Global timeout for the entire process.
 
 ### configure(options)
-options: `{ snapshotPath?: string }`
 
-Return value: `void`
+`{ snapshotPath?: string }` — must be called before any `expectSnapshot()`. Also configurable via `MANTEN_SNAPSHOT_PATH` and `MANTEN_UPDATE_SNAPSHOTS` env vars.
 
-Configure global settings for manten. This should be called before any tests run.
+## TypeScript
 
-Options:
-- `snapshotPath`: Path to the snapshot file (default: `.manten.snap`)
-
-Environment variables:
-- `MANTEN_SNAPSHOT_PATH` - Sets the snapshot file path
-- `MANTEN_UPDATE_SNAPSHOTS` - Set to `1` or `true` to update snapshots (runtime mode, not configuration)
+Manten is written in TypeScript. All APIs are fully typed, and `Test`/`Describe` types are exported for advanced use cases.
 
 ## FAQ
 
-### What does Manten mean?
+### What does manten mean?
+
 Manten (まんてん, 満点) means "maximum points" or 100% in Japanese.
 
-### What's the logo?
-It's a Hanamaru symbol:
+### Why no test runner?
 
-> The hanamaru (はなまる, 花丸) is a variant of the O mark used in Japan, written as 💮︎. It is typically drawn as a spiral surrounded by rounded flower petals, suggesting a flower. It is frequently used in praising or complimenting children, and the motif often appears in children's characters and logos.
->
-> The hanamaru is frequently written on tests if a student has achieved full marks or an otherwise outstanding result. It is sometimes used in place of an O mark in grading written response problems if a student's answer is especially good. Some teachers will add more rotations to the spiral the better the answer is. It is also used as a symbol for good weather.
-
-— https://en.wikipedia.org/wiki/O_mark
-
-### Why is there no test runner?
-No test runner means **zero overhead**. Your tests are plain Node.js scripts—no file discovery, no spawning processes, no abstraction layers slowing you down.
-
-**Why this matters:**
-- **Faster startup**: No scanning directories or pattern matching
-- **Full Node.js control**: Use any loaders, flags, or tools (tsx, Babel, etc.)
-- **No false positives**: You explicitly run what you want
-- **True async**: You manage concurrency exactly how you need it
-
-Test runners add complexity and overhead. Manten gets out of your way and lets Node.js do what it does best.
-
-## Gotchas & Important Notes
-
-### Using await (optional)
-You can `await` tests to control execution order (sequential vs concurrent).
-
-You can also use [top-level `await`](https://v8.dev/features/top-level-await) (Node.js 14.8+) or wrap in an async IIFE if needed.
-
-### Tests run immediately
-Unlike other frameworks, tests execute **as soon as** `test()` is called—not after a collection phase. This means:
-
-```ts
-console.log('before test')
-test('my test', () => {
-    console.log('during test')
-})
-console.log('after test call')
-
-// Output order:
-// before test
-// during test          ← Executes immediately!
-// ✔ my test
-// after test call
-```
-
-This is intentional for zero overhead, but may surprise users coming from Jest/Mocha.
-
-### Process exit code
-When tests fail, Manten sets `process.exitCode = 1` but doesn't call `process.exit()`. This allows all tests to complete and the final report to be generated on the `process.on('exit')` event.
-
-### Concurrent tests and shared state
-When running tests concurrently (without `await`), be careful with shared state:
-
-```ts
-// ❌ Bad: Shared state causes race conditions
-let sharedCounter = 0
-test('A', async () => {
-    sharedCounter += 1
-    await delay(10)
-    expect(sharedCounter).toBe(1) // May fail!
-})
-test('B', async () => {
-    sharedCounter += 1
-    await delay(10)
-    expect(sharedCounter).toBe(1) // May fail!
-})
-
-// ✅ Good: Each test has its own state
-test('A', async () => {
-    const counter = 1
-    await delay(10)
-    expect(counter).toBe(1)
-})
-test('B', async () => {
-    const counter = 1
-    await delay(10)
-    expect(counter).toBe(1)
-})
-```
-
-This is why Manten has no `beforeEach`—it encourages isolation.
-
-### Running TypeScript tests
-Manten has no built-in TypeScript support. Use Node.js loaders like [tsx](https://github.com/privatenumber/tsx):
-
-```sh
-npx tsx tests/test.ts
-# or
-node --loader tsx tests/test.ts
-```
-
-This is by design—you get full control over your build tooling.
-
-### No .only, .skip, or .todo
-Manten doesn't have `.only()` or `.skip()` modifiers. Instead, use the `TESTONLY` environment variable or JavaScript:
-
-**Using `TESTONLY` to run specific tests:**
-
-```sh
-# Run only tests matching "authentication"
-TESTONLY=authentication node tests/test.mjs
-
-# Works with partial matches and nested groups
-TESTONLY="API › POST" npm test
-```
-
-The `TESTONLY` env var performs substring matching against full test titles (including group prefixes), so it will run any test whose title contains the specified string.
-
-**Using JavaScript for conditional tests:**
-
-```ts
-// Skip tests by commenting them out
-// test('skipped test', () => { ... })
-```
-
-This keeps the API minimal while giving you powerful filtering.
+No runner = zero overhead. No file discovery, no spawning processes, no config. Tests are scripts — run them however you want.
 
 ### Why no beforeAll/beforeEach?
-`beforeAll`/`beforeEach` hooks usually deal with managing shared environmental variables.
 
-Since _Manten_ puts async flows first, this paradigm doesn't work well when tests are running concurrently.
+Manten runs tests concurrently by default. Shared setup hooks don't compose with concurrent execution. Inline setup in each test, or use `describe()` + `onFinish()` for shared resources.
 
-By creating a new context for each test, a more functional approach can be taken where shared logic is better abstracted and organized.
+### How does manten report failures to CI?
 
-<details>
-    <summary>
-        Code difference
-    </summary>
-
-<br>
-
-**Before**
-
-There can be a lot of code between the `beforeEach` and the actual tests that makes it hard to follow the flow in logic.
-
-```ts
-beforeAll(async () => {
-    doSomethingBeforeAll()
-})
-
-beforeEach(() => {
-    doSomethingBeforeEach()
-})
-
-// There can be a lot of code in between, making
-// it hard to see there's logic before each test
-
-test('My test', () => {
-    // ...
-})
-```
-
-**After**
-
-Less magic, more explicit code!
-
-```ts
-await doSomethingBeforeAll()
-
-test('My test', async () => {
-    await doSomethingBeforeEach()
-
-    // ...
-})
-```
-</details>
+When a test fails, manten sets `process.exitCode = 1` but doesn't force-exit. All remaining tests run to completion, and the final report prints on the `exit` event. CI systems pick up the non-zero exit code automatically.
 
 ## Related
 
 ### [fs-fixture](https://github.com/privatenumber/fs-fixture)
 
-Easily create test fixtures at a temporary file-system path.
+Create disposable file system fixtures for testing. Pairs naturally with manten's hooks:
+
+```ts
+import { createFixture } from 'fs-fixture'
+import { test, expect } from 'manten'
+
+test('reads config', async () => {
+    await using fixture = await createFixture({
+        'package.json': JSON.stringify({ name: 'my-app' }),
+        'src/index.js': 'export default 42'
+    })
+
+    const result = await readPackageJson(fixture.path)
+    expect(result.name).toBe('my-app')
+}) // fixture auto-cleaned up when test scope exits
+```
 
 ## Sponsors
 
