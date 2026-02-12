@@ -42,10 +42,10 @@
 	"packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b",
 	"scripts": {
 		"build": "pkgroll --minify",
-		"test": "tsx tests",
+		"test": "node tests/index.ts",
 		"lint": "lintroll --git --cache",
 		"type-check": "tsc",
-		"dev": "tsx watch --conditions=development tests",
+		"dev": "node --watch -C development tests/index.ts",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"engines": {
@@ -65,7 +65,6 @@
 		"lintroll": "^1.24.4",
 		"pkgroll": "^2.21.1",
 		"pretty-ms": "^9.3.0",
-		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
 	}
 }

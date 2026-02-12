@@ -1,8 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { inspect } from 'node:util';
-import { asyncContext } from '../async-context.js';
-import { stableJsonStringify } from './format.js';
+import { asyncContext } from '../async-context.ts';
+import { stableJsonStringify } from './format.ts';
 
 // Serialize value to a stable string representation
 export const serialize = (value: unknown): string => inspect(value, {

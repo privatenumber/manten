@@ -5,6 +5,7 @@
 			"ESNext",
 		],
 		"module": "Preserve",
+		"allowImportingTsExtensions": true,
 		"strict": true,
 		"noEmit": true,
 		"esModuleInterop": true,

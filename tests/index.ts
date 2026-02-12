@@ -1,18 +1,18 @@
 import { describe } from 'manten';
 
 describe('manten', async () => {
-	await import('./specs/abort-signal.js');
-	await import('./specs/api.js');
-	await import('./specs/async.js');
-	await import('./specs/describe-timeout.js');
-	await import('./specs/filtering.js');
-	await import('./specs/hooks.js');
-	await import('./specs/nesting.js');
-	await import('./specs/parallel.js');
-	await import('./specs/process-timeout.js');
-	await import('./specs/reporting.js');
-	await import('./specs/retry.js');
-	await import('./specs/skip.js');
-	await import('./specs/snapshots.js');
-	await import('./specs/snapshots-serialize.js');
+	await import('./specs/abort-signal.ts');
+	await import('./specs/api.ts');
+	await import('./specs/async.ts');
+	await import('./specs/describe-timeout.ts');
+	await import('./specs/filtering.ts');
+	await import('./specs/hooks.ts');
+	await import('./specs/nesting.ts');
+	await import('./specs/parallel.ts');
+	await import('./specs/process-timeout.ts');
+	await import('./specs/reporting.ts');
+	await import('./specs/retry.ts');
+	await import('./specs/skip.ts');
+	await import('./specs/snapshots.ts');
+	await import('./specs/snapshots-serialize.ts');
 });

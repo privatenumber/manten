@@ -1,4 +1,4 @@
-import { createDeferred } from './deferred.js';
+import { createDeferred } from './deferred.ts';
 
 const setTimer = (
 	duration: number,

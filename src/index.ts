@@ -1,11 +1,11 @@
 export type {
 	Test,
 	Describe,
-} from './types.js';
+} from './types.ts';
 export {
 	describe, onFinish, skip,
-} from './context.js';
-export { test, onTestFail, onTestFinish } from './create-test.js';
-export { expectSnapshot, configure } from './snapshot/snapshots.js';
-export { setProcessTimeout } from './process-timeout.js';
+} from './context.ts';
+export { test, onTestFail, onTestFinish } from './create-test.ts';
+export { expectSnapshot, configure } from './snapshot/snapshots.ts';
+export { setProcessTimeout } from './process-timeout.ts';
 export { expect } from 'expect';

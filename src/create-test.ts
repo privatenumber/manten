@@ -4,25 +4,25 @@ import type {
 	TestMeta,
 	onTestFailCallback,
 	Callback,
-} from './types.js';
+} from './types.ts';
 import {
 	logTestSuccess,
 	logTestFail,
 	logTestSkip,
 	logReport,
-} from './logger.js';
-import type { Context } from './context.js';
-import { timeLimitFunction } from './utils/timer.js';
-import { createHook } from './utils/hook.js';
-import { retry } from './utils/retry.js';
-import { linkAbortSignal } from './utils/link-abort-signal.js';
+} from './logger.ts';
+import type { Context } from './context.ts';
+import { timeLimitFunction } from './utils/timer.ts';
+import { createHook } from './utils/hook.ts';
+import { retry } from './utils/retry.ts';
+import { linkAbortSignal } from './utils/link-abort-signal.ts';
 import {
 	createSnapshotContext,
 	saveSnapshots,
 	getSnapshotSummary,
-} from './snapshot/snapshots.js';
-import { formatSnapshotSummary } from './snapshot/format.js';
-import { asyncContext } from './async-context.js';
+} from './snapshot/snapshots.ts';
+import { formatSnapshotSummary } from './snapshot/format.ts';
+import { asyncContext } from './async-context.ts';
 
 // Custom error class for skipping tests
 class SkipError extends Error {

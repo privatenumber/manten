@@ -597,11 +597,14 @@ import getNode from 'get-node'
 import { execaNode } from 'execa'
 import { test } from 'manten'
 
-const nodeVersions = ['18.20.0', '20.18.0', '22.12.0']
+const nodeVersions = ['20', '22', '24', '26']
 
 nodeVersions.map(async (version) => {
     const node = await getNode(version)
-    test(`Works in Node.js ${node.version}`, () => execaNode('./script.js', { nodePath: node.path }))
+    test(
+        `Works in Node.js ${node.version}`,
+        () => execaNode('./script.ts', { nodePath: node.path })
+    )
 })
 ```
 

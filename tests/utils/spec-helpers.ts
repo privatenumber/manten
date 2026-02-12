@@ -24,6 +24,4 @@ export const node = (
 	cwd: path.dirname(scriptPath),
 	extendEnv: false, // Don't inherit parent process env
 	reject: options?.reject ?? false,
-	// Don't inherit tsx loaders from parent process
-	nodeOptions: [],
 });

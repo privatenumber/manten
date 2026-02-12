@@ -3,13 +3,13 @@ import type {
 	Describe,
 	DescribeCallback,
 	Callback,
-} from './types.js';
-import { consoleError } from './logger.js';
-import { waitAllPromises } from './utils/wait-all-promises.js';
-import { createSemaphore } from './utils/semaphore.js';
-import { timeLimitFunction } from './utils/timer.js';
-import { linkAbortSignal } from './utils/link-abort-signal.js';
-import { asyncContext } from './async-context.js';
+} from './types.ts';
+import { consoleError } from './logger.ts';
+import { waitAllPromises } from './utils/wait-all-promises.ts';
+import { createSemaphore } from './utils/semaphore.ts';
+import { timeLimitFunction } from './utils/timer.ts';
+import { linkAbortSignal } from './utils/link-abort-signal.ts';
+import { asyncContext } from './async-context.ts';
 
 export type Context = {
 	pendingTests: Promise<unknown>[];

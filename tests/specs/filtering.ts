@@ -1,5 +1,5 @@
 import { createFixture } from 'fs-fixture';
-import { installManten, node } from '../utils/spec-helpers.js';
+import { installManten, node } from '../utils/spec-helpers.ts';
 import { describe, test, expect } from 'manten';
 
 describe('filtering', () => {

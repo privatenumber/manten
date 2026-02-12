@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { Context } from './context.js';
-import type { Callback, onTestFailCallback } from './types.js';
+import type { Context } from './context.ts';
+import type { Callback, onTestFailCallback } from './types.ts';
 
 export type AsyncContextStore = {
 	// Describe-level

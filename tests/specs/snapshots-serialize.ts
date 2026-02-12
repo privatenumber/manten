@@ -1,4 +1,4 @@
-import { serialize } from '../../src/snapshot/snapshots.js';
+import { serialize } from '../../src/snapshot/snapshots.ts';
 import { describe, test, expect } from 'manten';
 
 describe('snapshots serialize', () => {

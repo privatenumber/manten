@@ -3,7 +3,7 @@ import {
 	green, red, yellow, dim,
 } from 'kolorist';
 import prettyMs from 'pretty-ms';
-import type { TestMeta } from './types.js';
+import type { TestMeta } from './types.ts';
 
 const newline = '\n';
 const indent = '    ';

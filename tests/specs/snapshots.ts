@@ -1,6 +1,6 @@
 import { createFixture } from 'fs-fixture';
-import { expectMatchInOrder } from '../utils/expect-match-in-order.js';
-import { installManten, node } from '../utils/spec-helpers.js';
+import { expectMatchInOrder } from '../utils/expect-match-in-order.ts';
+import { installManten, node } from '../utils/spec-helpers.ts';
 import { describe, test, expect } from 'manten';
 
 // Snapshot tests verify that the snapshot functionality works correctly.
