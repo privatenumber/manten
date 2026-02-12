@@ -1,4 +1,4 @@
-import { red } from 'kolorist';
+import { red } from 'ansis';
 
 export const setProcessTimeout = (ms: number) => {
 	const timeout = setTimeout(() => {

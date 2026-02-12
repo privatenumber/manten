@@ -1,4 +1,4 @@
-import { dim } from 'kolorist';
+import { dim } from 'ansis';
 import type {
 	Test,
 	TestMeta,

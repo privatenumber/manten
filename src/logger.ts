@@ -1,7 +1,7 @@
 import { inspect } from 'node:util';
 import {
 	green, red, yellow, dim,
-} from 'kolorist';
+} from 'ansis';
 import prettyMs from 'pretty-ms';
 import type { TestMeta } from './types.ts';
 
