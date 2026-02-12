@@ -17,7 +17,7 @@ describe('api', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ should log');
 		expect(testProcess.stdout).toMatch('1 passed');
 		expect(testProcess.stdout).not.toMatch('failed');
@@ -42,7 +42,7 @@ describe('api', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Error: Error');
 	});
 
@@ -60,7 +60,7 @@ describe('api', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Expected: 2');
 		expect(testProcess.stderr).not.toMatch('matcherResult:');
 		expect(testProcess.stdout).toMatch('0 passed\n1 failed');

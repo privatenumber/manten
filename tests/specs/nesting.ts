@@ -29,7 +29,7 @@ describe('nesting', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ Level 1 › Test at level 1');
 		expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Test at level 2');
 		expect(testProcess.stdout).toMatch('✔ Level 1 › Level 2 › Level 3 › Test at level 3');

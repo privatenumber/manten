@@ -84,7 +84,7 @@ describe('retry', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		expect(testProcess.stdout).toMatch('(3/3)');
 		expect(testProcess.stdout).toMatch('1 passed');

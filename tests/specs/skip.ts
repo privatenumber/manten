@@ -29,7 +29,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('○ should skip');
 		expect(testProcess.stdout).toMatch('✔ should pass');
 		expect(testProcess.stdout).toMatch('1 passed');
@@ -51,7 +51,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ should skip no reason');
 		expect(testProcess.stdout).toMatch('0 passed');
 		expect(testProcess.stdout).toMatch('1 skipped');
@@ -79,7 +79,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Group A › nested skip');
 		expect(testProcess.stdout).toMatch('○ Group A › Group B › deeply nested skip');
 		expect(testProcess.stdout).toMatch('0 passed');
@@ -105,7 +105,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('before skip');
 		expect(testProcess.stdout).toMatch('cleanup ran');
 		expect(testProcess.stdout).not.toMatch('after skip should not run');
@@ -130,7 +130,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('attempt: 1');
 		expect(testProcess.stdout).not.toMatch('attempt: 2');
 		expect(testProcess.stdout).toMatch('○ skip with retry');
@@ -152,7 +152,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ skip with timeout');
 		expect(testProcess.stdout).not.toMatch('Timeout');
 		expect(testProcess.stdout).toMatch('1 skipped');
@@ -191,7 +191,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ GPU tests › render shader');
 		expect(testProcess.stdout).toMatch('○ GPU tests › compute pipeline');
 		expect(testProcess.stdout).toMatch('○ GPU tests › texture sampling');
@@ -224,7 +224,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('First test ran');
 		expect(testProcess.stderr).toMatch('skip() must be called before any tests');
 	});
@@ -263,7 +263,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Graphics › 2D › canvas');
 		expect(testProcess.stdout).toMatch('○ Graphics › 2D › svg');
 		expect(testProcess.stdout).toMatch('○ Graphics › 3D › webgl');
@@ -299,7 +299,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Parent › Child A › test 1');
 		expect(testProcess.stdout).toMatch('✔ Parent › Child B › test 2');
 		expect(testProcess.stdout).not.toMatch('Should not run');
@@ -332,7 +332,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('Setup database');
 		expect(testProcess.stdout).toMatch('Cleanup database');
 		expect(testProcess.stdout).not.toMatch('Should not run');
@@ -360,7 +360,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('First test ran');
 		expect(testProcess.stderr).toMatch('skip() must be called before any tests');
 	});
@@ -388,7 +388,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Group › test with own skip');
 		expect(testProcess.stdout).toMatch('○ Group › test without own skip');
 		expect(testProcess.stdout).not.toMatch('Test body should not run');
@@ -419,7 +419,7 @@ describe('skip', () => {
 			env: { TESTONLY: 'Test B' },
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('skip() must be called before any tests');
 	});
 
@@ -446,7 +446,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('Suite test ran');
 		expect(testProcess.stderr).toMatch('skip() must be called before any tests');
 	});
@@ -477,7 +477,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Async setup › test 1');
 		expect(testProcess.stdout).toMatch('○ Async setup › test 2');
 		expect(testProcess.stdout).not.toMatch('Should not run');
@@ -509,7 +509,7 @@ describe('skip', () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('○ Conditional skip › test 1');
 		expect(testProcess.stdout).toMatch('○ Conditional skip › test 2');
 		expect(testProcess.stdout).not.toMatch('Should not run');

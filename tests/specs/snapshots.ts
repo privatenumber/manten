@@ -298,7 +298,7 @@ describe('Snapshots', () => {
 			'Snapshots: 📸 2 new',
 		]);
 
-		expect(result.exitCode).toBe(0);
+		expect('exitCode' in result).toBe(false);
 
 		// Verify the snapshot file - strings are quoted
 		const snapshotContent = await fixture.readFile('.manten.snap', 'utf8');
@@ -339,7 +339,6 @@ describe('Snapshots', () => {
 			env: {
 				MANTEN_UPDATE_SNAPSHOTS: '1',
 			},
-			reject: false,
 		});
 
 		// Should fail with duplicate test title error
@@ -348,7 +347,7 @@ describe('Snapshots', () => {
 			'Test titles must be unique across all files when using global snapshots',
 		]);
 
-		expect(result.exitCode).toBe(1);
+		expect('exitCode' in result).toBe(true);
 	});
 
 	test('Throws error on duplicate test titles across files', async () => {
@@ -379,7 +378,6 @@ describe('Snapshots', () => {
 			env: {
 				MANTEN_UPDATE_SNAPSHOTS: '1',
 			},
-			reject: false,
 		});
 
 		// Should fail with duplicate test title error
@@ -388,7 +386,7 @@ describe('Snapshots', () => {
 			'Test titles must be unique across all files when using global snapshots',
 		]);
 
-		expect(result.exitCode).toBe(1);
+		expect('exitCode' in result).toBe(true);
 	});
 
 	test('Throws error when configure is called after snapshots are loaded', async () => {
@@ -429,7 +427,7 @@ describe('Snapshots', () => {
 			'Snapshots: 📸 1 new',
 		]);
 
-		expect(result.exitCode).toBe(0);
+		expect('exitCode' in result).toBe(false);
 	});
 
 	test('Throws error on duplicate snapshot keys', async () => {
@@ -461,7 +459,7 @@ describe('Snapshots', () => {
 			'Test names must be unique across all test files',
 		]);
 
-		expect(result.exitCode).toBe(1);
+		expect('exitCode' in result).toBe(true);
 	});
 
 	test('Retried tests use same snapshot keys', async () => {
@@ -493,7 +491,7 @@ describe('Snapshots', () => {
 
 		const result = await node(fixture.getPath('test.mjs'));
 
-		expect(result.exitCode).toBe(0);
+		expect('exitCode' in result).toBe(false);
 		expect(result.stdout).toContain('✔ flaky test (2/2)');
 	});
 });

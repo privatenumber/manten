@@ -36,7 +36,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// Sequential execution: each test completes before next starts
 			expectMatchInOrder(testProcess.stdout, [
@@ -84,7 +84,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// All execute sequentially
 			expectMatchInOrder(testProcess.stdout, [
@@ -130,7 +130,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
 
@@ -194,7 +194,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// With parallel: 2, only 2 tests run concurrently
 			// Test 1 and Test 2 should start (in any order)
@@ -264,7 +264,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
 
@@ -318,7 +318,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
@@ -363,7 +363,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			const lines = testProcess.stdout.split('\n').filter(line => line.trim());
 
@@ -431,7 +431,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// All awaited = sequential execution despite parallel: 10
 			expectMatchInOrder(testProcess.stdout, [
@@ -478,7 +478,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
 	});
@@ -515,7 +515,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// Sequential execution: each test completes before next starts
 			expectMatchInOrder(testProcess.stdout, [
@@ -582,7 +582,7 @@ describe('parallel', () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 
 			// Only 2 suites run at a time: A+B start (in any order), then C starts after one completes
 			expect(testProcess.stdout).toMatch('A1 start');

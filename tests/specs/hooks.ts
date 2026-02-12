@@ -33,7 +33,7 @@ describe('hooks', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expectMatchInOrder(testProcess.stdout, [
 			'test start',
 			'test error hello',
@@ -69,7 +69,7 @@ describe('hooks', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 
 		// Check for original error
 		expect(testProcess.stderr).toMatch('✖ failing hooks');
@@ -118,7 +118,7 @@ describe('hooks', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expectMatchInOrder(testProcess.stdout, [
 			'inner start',
 			'nested start',
@@ -149,7 +149,7 @@ describe('hooks', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('executing hook');
 		expect(testProcess.stderr).toMatch('Error: onFinish error');
 	});

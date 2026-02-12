@@ -22,7 +22,7 @@ describe('async', async () => {
 
 		const testProcess = await node(fixture.getPath('index.mjs'));
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expectMatchInOrder(testProcess.stdout, ['b', 'a']);
 		expect(testProcess.stdout).toMatch('2 passed');
 	});
@@ -49,7 +49,7 @@ describe('async', async () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 			expect(testProcess.stdout).toMatch('2 passed');
 		});
 
@@ -79,7 +79,7 @@ describe('async', async () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(0);
+			expect('exitCode' in testProcess).toBe(false);
 			expectMatchInOrder(testProcess.stdout, ['A', 'B', 'C']);
 			expect(testProcess.stdout).toMatch('3 passed');
 		});
@@ -99,7 +99,7 @@ describe('async', async () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(1);
+			expect('exitCode' in testProcess).toBe(true);
 			expect(testProcess.stderr).toMatch('Error: Timeout: 100ms');
 		});
 
@@ -122,7 +122,7 @@ describe('async', async () => {
 
 			const testProcess = await node(fixture.getPath('index.mjs'));
 
-			expect(testProcess.exitCode).toBe(1);
+			expect('exitCode' in testProcess).toBe(true);
 			expect(testProcess.stderr).toMatch('Error: Timeout: 100ms');
 			expect(testProcess.stdout).toMatch('1 passed');
 			expect(testProcess.stdout).toMatch('1 failed');

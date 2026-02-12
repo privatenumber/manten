@@ -30,7 +30,7 @@ describe('reporting', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('• incomplete test');
 		expect(testProcess.stdout).toMatch('1 pending');
 	});
@@ -65,7 +65,7 @@ describe('reporting', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('• pending 1');
 		expect(testProcess.stdout).toMatch('• pending 2');
 		expect(testProcess.stdout).toMatch('0 passed');

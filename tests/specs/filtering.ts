@@ -18,7 +18,7 @@ describe('filtering', () => {
 			env: { TESTONLY: 'run' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ should run');
 		expect(testProcess.stdout).not.toMatch('skip');
 		expect(testProcess.stdout).toMatch('1 passed');
@@ -40,7 +40,7 @@ describe('filtering', () => {
 			env: { TESTONLY: 'auth' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ authentication test');
 		expect(testProcess.stdout).toMatch('✔ authorization test');
 		expect(testProcess.stdout).not.toMatch('other test');
@@ -68,7 +68,7 @@ describe('filtering', () => {
 			env: { TESTONLY: 'API' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ API › GET /users');
 		expect(testProcess.stdout).toMatch('✔ API › POST /users');
 		expect(testProcess.stdout).not.toMatch('Database');
@@ -91,7 +91,7 @@ describe('filtering', () => {
 			env: { TESTONLY: '[brackets]' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ test with [brackets]');
 		expect(testProcess.stdout).not.toMatch('parens');
 		expect(testProcess.stdout).toMatch('1 passed');
@@ -112,7 +112,7 @@ describe('filtering', () => {
 			env: { TESTONLY: '' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('✔ test 1');
 		expect(testProcess.stdout).toMatch('✔ test 2');
 		expect(testProcess.stdout).toMatch('2 passed');
@@ -133,7 +133,7 @@ describe('filtering', () => {
 			env: { TESTONLY: 'nonexistent' },
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).not.toMatch('✔');
 		expect(testProcess.stdout).not.toMatch('passed');
 	});
@@ -254,7 +254,7 @@ describe('filtering', () => {
 			env: {
 				TESTONLY: 'test',
 				FORCE_COLOR: '1',
-				NO_COLOR: undefined,
+				NO_COLOR: '',
 			},
 		});
 

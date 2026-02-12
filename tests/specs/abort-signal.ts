@@ -30,7 +30,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
@@ -64,7 +64,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		expect(testProcess.stdout).toMatch('1 failed');
 	});
@@ -101,7 +101,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		expect(testProcess.stdout).toMatch('CLEANUP: true');
 		expect(testProcess.stdout).toMatch('1 failed');
@@ -137,7 +137,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
@@ -189,7 +189,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('(2/2)');
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
@@ -219,7 +219,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
 
@@ -259,7 +259,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		expect(testProcess.stdout).toMatch('CLEANUP_VERIFIED: true');
 		expect(testProcess.stdout).toMatch('1 passed');
 	});
@@ -290,7 +290,7 @@ describe('abort signal', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('ABORT_REASON: Timeout: 50ms');
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		expect(testProcess.stdout).toMatch('1 failed');

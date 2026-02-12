@@ -32,7 +32,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 		expect(testProcess.stdout).toMatch('2 failed');
 	});
@@ -66,7 +66,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stdout).toMatch('CLEANUP: true');
 	});
 
@@ -94,7 +94,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		// Should abort due to Level 2's 100ms timeout, not Level 1's 5s or test's 5s
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 	});
@@ -124,7 +124,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		// Should abort after ~100ms from group timeout, not test timeout
 		expect(testProcess.stdout).toMatch('ATTEMPT: 1');
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
@@ -162,7 +162,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		// Test 1 passes, test 2 times out, test 3 never starts
 		expect(testProcess.stdout).toMatch('passed');
 		expect(testProcess.stdout).toMatch('failed');
@@ -192,7 +192,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 	});
 
@@ -227,7 +227,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		// Ensure the child actually ran the check
 		expect(testProcess.stdout).toMatch('VERIFIED_CHILD_RAN');
@@ -255,7 +255,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		// Test's own 50ms timeout should fire first
 		expect(testProcess.stderr).toMatch('Timeout: 50ms');
 		// Should not see describe's 5s timeout
@@ -283,7 +283,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(0);
+		expect('exitCode' in testProcess).toBe(false);
 		// stderr should be empty (no MaxListenersExceededWarning)
 		expect(testProcess.stderr).toBe('');
 		expect(testProcess.stdout).toMatch('20 passed');
@@ -310,7 +310,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 		// Verify the zombie error doesn't print a confusing second failure
 		expect(testProcess.stderr).not.toMatch('I AM A ZOMBIE ERROR');
@@ -351,7 +351,7 @@ describe('describe timeout', () => {
 			console.log(testProcess);
 		});
 
-		expect(testProcess.exitCode).toBe(1);
+		expect('exitCode' in testProcess).toBe(true);
 		expect(testProcess.stderr).toMatch('Timeout: 100ms');
 		// Blocker starts and hangs
 		expect(testProcess.stdout).toMatch('BLOCKER_STARTED');
