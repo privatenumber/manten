@@ -165,6 +165,41 @@ describe('Authentication', () => {
 
 Each file works standalone too — `node tests/auth.ts` runs just that file. The entry point is your test runner, written in plain JavaScript.
 
+### Parameterized test files
+
+To pass data into a test file, export a function that wraps a `describe()`:
+
+```ts
+// tests/specs/builds.ts
+import { describe, test, expect } from 'manten'
+
+export const builds = (nodePath: string) => describe('builds', () => {
+    test('compiles', async () => {
+        const result = await run(nodePath)
+        expect(result.exitCode).toBe(0)
+    })
+})
+```
+
+Since the `describe()` doesn't run until the function is called, these can be statically imported:
+
+```ts
+// tests/index.ts
+import { builds } from './specs/builds.ts'
+import { errors } from './specs/errors.ts'
+import { describe } from 'manten'
+
+describe('my-app', async () => {
+    for (const nodeVersion of ['v20', 'v22', 'v24']) {
+        const node = await getNode(nodeVersion)
+        await describe(`Node ${node.version}`, () => {
+            builds(node.path)
+            errors(node.path)
+        })
+    }
+})
+```
+
 ### Watch mode
 
 ```sh
