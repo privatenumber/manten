@@ -40,7 +40,7 @@ npm i -D manten
 Test files are plain scripts — run them directly:
 
 ```sh
-node tests/test.ts
+node tests/index.ts
 ```
 
 No file discovery, no config files, no abstraction layers. Node.js startup time, nothing more.
@@ -61,6 +61,9 @@ test('second', async () => { /* ... */ }) // runs immediately
 test('third', async () => { /* ... */ }) // runs with second
 ```
 
+> [!TIP]
+> Prefer concurrent by default. Only `await` to enforce ordering. Since Node.js won't exit while promises are settling, you don't actually need to `await` anything.
+
 ### Standalone imports
 
 Every API is a standalone import — no callback destructuring:
@@ -80,7 +83,7 @@ One dependency ([`expect`](https://www.npmjs.com/package/expect) for assertions 
 ## Quick start
 
 ```ts
-// tests/test.ts
+// tests/index.ts
 import { test, expect } from 'manten'
 
 test('adds numbers', () => {
@@ -94,7 +97,7 @@ test('async operation', async () => {
 ```
 
 ```sh
-node tests/test.ts
+node tests/index.ts
 ```
 
 > [!TIP]
@@ -200,13 +203,25 @@ describe('my-app', async () => {
 })
 ```
 
+### Recommended project structure
+
+```
+tests/
+  index.ts     # entry point — run this
+  specs/       # test files
+  utils/       # shared test helpers
+  fixtures/    # static test data
+```
+
+Use a single `index.ts` entry point that imports all test files. This gives you one command to run everything and enables `node --watch` across all files.
+
 ### Watch mode
 
 ```sh
 node --watch tests/index.ts
 ```
 
-Built into [Node.js](https://nodejs.org/api/cli.html#--watch) (stable since v22). Watches all imported files — change any test file, tests re-run automatically.
+Built into [Node.js](https://nodejs.org/api/cli.html#--watch) (stable since v22). Watches all imported files — change any test file and tests re-run automatically. This is why a single entry point matters: one command watches your entire test suite.
 
 ## Features
 
@@ -299,7 +314,7 @@ test('user state', () => {
 })
 ```
 
-Snapshots are stored in `.manten.snap`. Update with `MANTEN_UPDATE_SNAPSHOTS=1 node tests/test.ts`. Without named snapshots, reordering `expectSnapshot()` calls breaks comparisons.
+Snapshots are stored in `.manten.snap`. Update with `MANTEN_UPDATE_SNAPSHOTS=1 node tests/index.ts`. Without named snapshots, reordering `expectSnapshot()` calls breaks comparisons.
 
 > [!WARNING]
 > Snapshots are serialized with [`util.inspect`](https://nodejs.org/api/util.html#utilinspectobject-options), which may produce different output across Node.js versions. If snapshots fail after upgrading Node, re-run with `MANTEN_UPDATE_SNAPSHOTS=1` to regenerate.
@@ -348,8 +363,8 @@ setProcessTimeout(10 * 60 * 1000) // kill after 10 minutes
 Run specific tests by substring match (case-sensitive). Matches against the full title including describe prefixes:
 
 ```sh
-TESTONLY='login' node tests/test.ts
-TESTONLY='Auth' node tests/test.ts   # matches "Auth › login", "Auth › logout", etc.
+TESTONLY='login' node tests/index.ts
+TESTONLY='Auth' node tests/index.ts   # matches "Auth › login", "Auth › logout", etc.
 ```
 
 ## API

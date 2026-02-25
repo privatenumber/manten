@@ -7,29 +7,33 @@ Migrating from manten v1 (callback destructuring) to v2 (standalone imports via 
 **Before:** APIs accessed via callback destructuring
 
 ```ts
-import { describe, testSuite } from 'manten';
+import { describe, testSuite } from 'manten'
 
-describe('App', ({ test, describe, onFinish, skip }) => {
-    test('works', ({ onTestFail, skip, expectSnapshot }) => {
+describe('App', ({
+    test, describe, onFinish, skip
+}) => {
+    test('works', ({ onTestFail, expectSnapshot }) => {
         // ...
-    });
-});
+    })
+})
 
-export default testSuite(({ test }, param) => {
+export default testSuite(({ test }, parameter) => {
     // ...
-});
+})
 ```
 
 **After:** APIs are standalone imports, callbacks only receive `{ signal }`
 
 ```ts
-import { describe, test, onFinish, skip, onTestFail, expectSnapshot } from 'manten';
+import {
+    describe, test, onFinish, skip, onTestFail, expectSnapshot
+} from 'manten'
 
 describe('App', () => {
     test('works', () => {
         // ...
-    });
-});
+    })
+})
 ```
 
 ## Step-by-Step Migration
@@ -311,4 +315,24 @@ This pattern is common when testing across Node versions:
          // ...
      });
  });
+```
+
+## Recommendations
+
+### Prefer concurrent execution
+
+`test()` and `describe()` return plain promises. Node.js won't exit while promises are still settling, so you don't need to `await` them to keep the process alive. Prefer leaving off `await` to maximize concurrency — only add it when you need ordering guarantees.
+
+### Use a single entry point
+
+Instead of running each test file independently, create a `tests/index.ts` that imports all test files. This gives you one command to run everything and enables `node --watch` across all files.
+
+### Recommended project structure
+
+```
+tests/
+  specs/       # test files
+  utils/       # shared test helpers
+  fixtures/    # static test data
+  index.ts     # entry point — run this
 ```
