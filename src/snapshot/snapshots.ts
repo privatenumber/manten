@@ -113,7 +113,8 @@ export const createSnapshotContext = (testTitle: string, testInstance: unknown) 
 			throw new Error(
 				`Snapshot mismatch for "${snapshotKey}"\n`
 				+ `Expected:\n${existing}\n\n`
-				+ `Received:\n${serialized}`,
+				+ `Received:\n${serialized}\n\n`
+				+ 'Run with MANTEN_UPDATE_SNAPSHOTS=1 to update.',
 			);
 		}
 	};
