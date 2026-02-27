@@ -57,6 +57,7 @@
 		"nano-spawn": "^2.0.0",
 		"pkgroll": "^2.21.1",
 		"pretty-ms": "^9.3.0",
+		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
 	}
 }

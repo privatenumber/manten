@@ -21,6 +21,7 @@ export const node = async (
 		env: {
 			NO_COLOR: '1',
 			...options?.env,
+			NODE_OPTIONS: '',
 		},
 		cwd: path.dirname(scriptPath),
 	},
