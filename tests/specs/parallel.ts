@@ -539,7 +539,7 @@ describe('parallel', () => {
 				describe('Suite A', () => {
 					test('A1', async () => {
 						console.log('A1 start');
-						await setTimeout(200);
+						await setTimeout(500);
 						console.log('A1 end');
 					});
 				});
@@ -551,7 +551,7 @@ describe('parallel', () => {
 				describe('Suite B', () => {
 					test('B1', async () => {
 						console.log('B1 start');
-						await setTimeout(200);
+						await setTimeout(500);
 						console.log('B1 end');
 					});
 				});
@@ -563,7 +563,7 @@ describe('parallel', () => {
 				describe('Suite C', () => {
 					test('C1', async () => {
 						console.log('C1 start');
-						await setTimeout(200);
+						await setTimeout(500);
 						console.log('C1 end');
 					});
 				});
