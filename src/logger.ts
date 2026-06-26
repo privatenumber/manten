@@ -75,9 +75,7 @@ export const logTestFail = (
  * Passing a raw `Error` to `console.error` renders differently on Node
  * (`Error: …`) and Bun (`error: …` with a code frame).
  */
-export const logError = (error: unknown) => {
-	consoleError(inspect(error));
-};
+export const logError = (error: unknown) => consoleError(inspect(error));
 
 export const logTestSuccess = (testMeta: TestMeta) => {
 	consoleLog(`${formatTimestamp()} ${successIcon} ${getTestTitle(testMeta)}`);
