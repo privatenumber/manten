@@ -168,9 +168,6 @@ describe('Authentication', () => {
 
 Each file works standalone too — `node tests/auth.ts` runs just that file. The entry point is your test runner, written in plain JavaScript.
 
-> [!NOTE]
-> Under [Bun](https://bun.sh), this auto-nesting doesn't apply: Bun doesn't propagate [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html) across dynamic `import()`, so imported files register at the root instead of nesting under the parent. Use the parameterized pattern below, which works on both Node.js and Bun.
-
 ### Parameterized test files
 
 To pass data into a test file, export a function that wraps a `describe()`:

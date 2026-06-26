@@ -46,6 +46,7 @@ describe('nesting', () => {
 		// propagate ALS across dynamic import(), so children are flattened to the
 		// root instead of nesting under the parent. The static/parameterized
 		// pattern (export a function wrapping describe()) works on both runtimes.
+		// https://github.com/oven-sh/bun/issues/32693
 		if (isBun) {
 			skip('Bun drops AsyncLocalStorage across dynamic import()');
 		}

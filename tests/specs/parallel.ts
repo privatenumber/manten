@@ -537,7 +537,8 @@ describe('parallel', () => {
 			// Dynamically imported suites only join the parent's concurrency
 			// limiter when the parent's AsyncLocalStorage context reaches them.
 			// Bun drops ALS across dynamic import(), so the limit isn't applied
-			// and the ordering guarantee doesn't hold. See README.
+			// and the ordering guarantee doesn't hold.
+			// https://github.com/oven-sh/bun/issues/32693
 			if (isBun) {
 				skip('Bun drops AsyncLocalStorage across dynamic import()');
 			}

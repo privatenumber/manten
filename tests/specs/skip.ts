@@ -430,7 +430,8 @@ describe('skip', () => {
 		// Detecting a too-late skip() relies on the dynamically imported file's
 		// test() running within the parent's AsyncLocalStorage context. Bun does
 		// not propagate ALS across dynamic import(), so the parent never sees the
-		// child's test register and skip() is (incorrectly) allowed. See README.
+		// child's test register and skip() is (incorrectly) allowed.
+		// https://github.com/oven-sh/bun/issues/32693
 		if (isBun) {
 			skip('Bun drops AsyncLocalStorage across dynamic import()');
 		}
