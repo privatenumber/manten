@@ -1,5 +1,8 @@
 import { serialize } from '../../src/snapshot/snapshots.ts';
-import { describe, test, expect } from 'manten';
+import { isBun } from '../utils/runtime.ts';
+import {
+	describe, test, expect, skip,
+} from 'manten';
 
 describe('snapshots serialize', () => {
 	test('sorts object keys', () => {
@@ -87,6 +90,13 @@ describe('snapshots serialize', () => {
 	});
 
 	test('handles functions', () => {
+		// Inferring a name for an arrow function assigned to a `const` inside a
+		// nested scope is a V8 behavior; JavaScriptCore (Bun) reports
+		// `[Function (anonymous)]`. This asserts the V8/Node output.
+		if (isBun) {
+			skip('V8-specific function name inference');
+		}
+
 		const function_ = () => {};
 		expect(serialize(function_)).toBe('[Function: function_]');
 
