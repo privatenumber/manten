@@ -70,6 +70,13 @@ export const logTestFail = (
 	consoleError(`${indentMultiline(inspect(error))}\n`);
 };
 
+/**
+ * Log an error via `inspect()` so the output is identical across runtimes.
+ * Passing a raw `Error` to `console.error` renders differently on Node
+ * (`Error: …`) and Bun (`error: …` with a code frame).
+ */
+export const logError = (error: unknown) => consoleError(inspect(error));
+
 export const logTestSuccess = (testMeta: TestMeta) => {
 	consoleLog(`${formatTimestamp()} ${successIcon} ${getTestTitle(testMeta)}`);
 };

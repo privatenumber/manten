@@ -33,5 +33,13 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Test
+      - name: Test (Node)
         run: pnpm concurrently "pnpm test" "NODE_OPTIONS='--import=tsx/esm' pnpm run --use-node-version=20.20.0 test"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Test (Bun)
+        run: pnpm test:bun

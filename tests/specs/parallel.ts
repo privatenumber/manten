@@ -1,7 +1,10 @@
 import { createFixture } from 'fs-fixture';
 import { expectMatchInOrder } from '../utils/expect-match-in-order.ts';
 import { installManten, node } from '../utils/spec-helpers.ts';
-import { describe, test, expect } from 'manten';
+import { isBun } from '../utils/runtime.ts';
+import {
+	describe, test, expect, skip,
+} from 'manten';
 
 describe('parallel', () => {
 	describe('parallel: false (sequential)', () => {
@@ -531,6 +534,15 @@ describe('parallel', () => {
 		});
 
 		test('parallel option limits dynamic import suites', async () => {
+			// Dynamically imported suites only join the parent's concurrency
+			// limiter when the parent's AsyncLocalStorage context reaches them.
+			// Bun drops ALS across dynamic import(), so the limit isn't applied
+			// and the ordering guarantee doesn't hold.
+			// https://github.com/oven-sh/bun/issues/32693
+			if (isBun) {
+				skip('Bun drops AsyncLocalStorage across dynamic import()');
+			}
+
 			await using fixture = await createFixture({
 				'suite-a.mjs': `
 				import { setTimeout } from 'node:timers/promises';
