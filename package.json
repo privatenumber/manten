@@ -35,6 +35,7 @@
 	"scripts": {
 		"build": "pkgroll --clean-dist --minify",
 		"test": "node tests/index.ts",
+		"test:bun": "bun tests/index.ts",
 		"lint": "lintroll --git --cache",
 		"type-check": "tsc",
 		"dev": "node --watch -C development tests/index.ts",
