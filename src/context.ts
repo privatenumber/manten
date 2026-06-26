@@ -4,7 +4,7 @@ import type {
 	DescribeCallback,
 	Callback,
 } from './types.ts';
-import { consoleError } from './logger.ts';
+import { logError } from './logger.ts';
 import { waitAllPromises } from './utils/wait-all-promises.ts';
 import { createSemaphore } from './utils/semaphore.ts';
 import { timeLimitFunction } from './utils/timer.ts';
@@ -103,7 +103,7 @@ const runDescribe = async (
 		// Apply timeout if specified
 		await timeLimitFunction(inProgress, context.timeout, context.abortController);
 	} catch (error) {
-		consoleError(error);
+		logError(error);
 		process.exitCode = 1;
 	} finally {
 		unlinkAbort?.();
@@ -121,7 +121,7 @@ const runDescribe = async (
 			try {
 				await onFinishCallback();
 			} catch (error) {
-				consoleError(error);
+				logError(error);
 				process.exitCode = 1;
 			}
 		}
