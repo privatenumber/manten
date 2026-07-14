@@ -1,14 +1,20 @@
 import { expectTypeOf } from 'expect-type';
 import { describe, test, skip } from '#manten';
 
-// Verify describe callback receives optional { signal }
-describe('type check', () => {
+describe('skip return type in describe', () => {
 	const result = skip('test');
 	expectTypeOf(result).toBeVoid();
 });
 
-// Verify test callback receives optional { signal }
-test('type check', () => {
+test('skip return type in test', () => {
 	const result = skip('test');
 	expectTypeOf(result).toBeVoid();
+});
+
+describe('describe callback context', ({ signal }) => {
+	expectTypeOf(signal).toEqualTypeOf<AbortSignal>();
+});
+
+test('test callback context', ({ signal }) => {
+	expectTypeOf(signal).toEqualTypeOf<AbortSignal>();
 });

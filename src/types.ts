@@ -2,7 +2,7 @@ export type Callback = () => void | Promise<void>;
 
 export type onTestFailCallback = (error: unknown) => void;
 
-export type TestFunction = (api?: { signal: AbortSignal }) => void | Promise<void>;
+export type TestFunction = (api: { signal: AbortSignal }) => void | Promise<void>;
 
 export type Test = (
 	title: string,
@@ -13,7 +13,7 @@ export type Test = (
 	},
 ) => Promise<void>;
 
-export type DescribeCallback = (api?: { signal: AbortSignal }) => void | Promise<void>;
+export type DescribeCallback = (api: { signal: AbortSignal }) => void | Promise<void>;
 
 export type DescribeOptions = {
 	parallel?: boolean | number | 'auto';
